@@ -250,7 +250,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
             <tbody className="divide-y divide-gray-50">
               {visibleRows.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="py-12 text-center text-cool-gray text-xs">
+                  <td colSpan={4} className="py-12 text-center text-cool-gray text-xs">
                     No items match the selected filters.
                   </td>
                 </tr>
@@ -266,6 +266,17 @@ export default function MechanicalSeals({ onAddToQuote }) {
                     </td>
                     <td className="py-2 px-4 text-right font-semibold text-brand-black tabular-nums whitespace-nowrap">
                       {formatPrice(row.listPrice)}
+                    </td>
+                    <td className="py-2 px-2">
+                      <button
+                        onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice })}
+                        className="w-6 h-6 flex items-center justify-center rounded-full bg-brand-accent text-white hover:bg-brand-accent-dark transition-colors focus:outline-none"
+                        title="Add to quote"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 ))

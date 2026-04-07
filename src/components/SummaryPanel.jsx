@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function SummaryPanel({ activeSection, lineItems = [] }) {
+export default function SummaryPanel({ activeSection, lineItems = [], onRemoveItem }) {
   const [open, setOpen] = useState(true)
   const total = lineItems.reduce((sum, item) => sum + (item.price || 0), 0)
 
