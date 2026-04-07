@@ -10,8 +10,8 @@ const TYPE_LABELS = {
 const FILTER_DEFS = [
   { key: 'model',     label: 'Seal Model', optionLabel: v => v },
   { key: 'size',      label: 'Size',       optionLabel: v => formatSize(v) },
-  { key: 'face',      label: 'Face',       optionLabel: v => v },
-  { key: 'elastomer', label: 'Elastomer',  optionLabel: v => v },
+  { key: 'face',      label: 'Seal Faces',  optionLabel: v => v },
+  { key: 'elastomer', label: 'Elastomers', optionLabel: v => v },
 ]
 
 const ALL_METALS = ['316SS']
