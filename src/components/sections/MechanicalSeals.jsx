@@ -120,6 +120,31 @@ export default function MechanicalSeals() {
       {/* Filter bar */}
       <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 mb-4">
         <div className="flex flex-wrap gap-3 items-end">
+          {/* Unit system toggle */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">
+              Units
+            </label>
+            <div className="flex rounded border border-gray-200 overflow-hidden text-xs font-semibold">
+              {[{ val: 'inch', label: 'Inch' }, { val: 'metric', label: 'Metric' }, { val: 'both', label: 'Both' }].map(opt => (
+                <button
+                  key={opt.val}
+                  onClick={() => {
+                    setUnitSystem(opt.val)
+                    setFilters(prev => ({ ...prev, size: '' }))
+                  }}
+                  className={`px-3 py-1.5 transition-colors focus:outline-none
+                    ${unitSystem === opt.val
+                      ? 'bg-brand-accent text-white'
+                      : 'bg-white text-cool-gray hover:bg-gray-50'
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {FILTER_DEFS.map(({ key, label, optionLabel }) => (
             <div key={key} className="flex flex-col gap-1 min-w-[110px]">
               <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">
