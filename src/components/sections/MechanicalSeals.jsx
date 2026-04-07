@@ -236,6 +236,12 @@ export default function MechanicalSeals({ onAddToQuote }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, search, activeUnits, activeTypes])
 
+  const typeCounts = useMemo(() => {
+    const counts = { SA: 0, SPK: 0 }
+    for (const row of visibleRows) if (row.type in counts) counts[row.type]++
+    return counts
+  }, [visibleRows])
+
   const isFiltered = Object.values(filters).some(s => s.size > 0) || search ||
     activeUnits.size < 2 || activeTypes.size < 2
 
@@ -289,7 +295,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
                 <button
                   key={type}
                   onClick={() => toggleType(type)}
-                  className="px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all focus:outline-none"
+                  className="px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all focus:outline-none flex items-center gap-1.5"
                   style={{
                     background: activeTypes.has(type) ? '#c8102e' : 'transparent',
                     color: activeTypes.has(type) ? 'white' : '#6e6e73',
@@ -297,6 +303,12 @@ export default function MechanicalSeals({ onAddToQuote }) {
                   }}
                 >
                   {TYPE_LABELS[type]}
+                  <span
+                    className="text-[10px] font-semibold tabular-nums"
+                    style={{ opacity: activeTypes.has(type) ? 0.65 : 0.5 }}
+                  >
+                    {typeCounts[type].toLocaleString()}
+                  </span>
                 </button>
               ))}
             </div>
