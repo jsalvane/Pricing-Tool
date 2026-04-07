@@ -173,9 +173,19 @@ function rowToArr(row) {
 function makeSheet(rows) {
   const data = [EXPORT_HEADERS, ...rows.map(rowToArr)]
   const ws = XLSX.utils.aoa_to_sheet(data)
-  // Bold header row
   const range = XLSX.utils.decode_range(ws['!ref'])
-  for (let c = range.s.c; c <= range.e.c; c++) {
+  const priceCol = EXPORT_HEADERS.length - 1 // last column = List Price
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    const cell = ws[XLSX.utils.encode_cell({ r, c: priceCol })]
+    if (!cell) continue
+    if (r === 0) {
+      cell.s = { font: { bold: true } }
+    } else {
+      cell.z = '"$"#,##0'
+    }
+  }
+  // Bold the rest of the header row too
+  for (let c = range.s.c; c < priceCol; c++) {
     const cell = ws[XLSX.utils.encode_cell({ r: 0, c })]
     if (cell) cell.s = { font: { bold: true } }
   }
