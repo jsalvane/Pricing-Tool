@@ -56,7 +56,7 @@ export default function SummaryPanel({ activeSection, lineItems = [], onRemoveIt
               {lineItems.map((item, i) => (
                 <div
                   key={i}
-                  className="w-full flex items-center justify-between py-1.5 px-2.5 rounded text-left transition-all hover:bg-gray-50"
+                  className="w-full flex items-center justify-between py-1.5 px-2.5 rounded text-left transition-all hover:bg-gray-50 group"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-semibold text-brand-black truncate">{item.name}</p>
@@ -64,9 +64,20 @@ export default function SummaryPanel({ activeSection, lineItems = [], onRemoveIt
                       <p className="text-[10px] font-mono text-cool-gray mt-0.5">{item.code}</p>
                     )}
                   </div>
-                  <p className="text-[11px] font-semibold text-brand-black tabular-nums ml-2 shrink-0">
-                    ${item.price?.toFixed(2)}
-                  </p>
+                  <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                    <p className="text-[11px] font-semibold text-brand-black tabular-nums">
+                      ${item.price?.toFixed(2)}
+                    </p>
+                    <button
+                      onClick={() => onRemoveItem?.(i)}
+                      className="opacity-0 group-hover:opacity-100 w-4 h-4 flex items-center justify-center rounded-full text-cool-gray hover:text-brand-accent hover:bg-gray-100 transition-all"
+                      title="Remove"
+                    >
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
