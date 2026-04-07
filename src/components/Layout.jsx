@@ -31,7 +31,6 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
     })
   }
 
-  // Re-mount section component on change to retrigger animations
   useEffect(() => {
     if (prevSection.current !== activeSection) {
       setRenderKey(k => k + 1)
@@ -40,9 +39,10 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
   }, [activeSection])
 
   const currentSection = SECTIONS.find(s => s.id === activeSection)
+  const total = lineItems.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0)
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full" style={{ background: '#f2f2f7' }}>
       <Header activeSection={activeSection} onLogout={onLogout} />
 
       <div className="flex flex-1 min-h-0 max-w-[1280px] mx-auto w-full">
@@ -51,23 +51,32 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
         {/* Main workspace */}
         <main className="flex-1 min-w-0 overflow-y-auto">
           {/* Mobile section picker */}
-          <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-2 flex gap-2 overflow-x-auto scrollbar-none">
+          <div
+            className="lg:hidden sticky top-0 z-30 px-4 py-2.5 flex gap-2 overflow-x-auto"
+            style={{
+              background: 'rgba(242,242,247,0.9)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              borderBottom: '1px solid rgba(0,0,0,0.07)',
+            }}
+          >
             {SECTIONS.map(section => (
               <button
                 key={section.id}
                 onClick={() => onSectionChange(section.id)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap
-                  ${activeSection === section.id
-                    ? 'bg-brand-accent border-brand-accent text-white'
-                    : 'border-gray-200 text-cool-gray hover:border-gray-300 bg-white'
-                  }`}
+                className="shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all whitespace-nowrap focus-visible:outline-none"
+                style={{
+                  background: activeSection === section.id ? '#c8102e' : 'rgba(255,255,255,0.7)',
+                  color: activeSection === section.id ? 'white' : '#6e6e73',
+                  border: activeSection === section.id ? '1px solid transparent' : '1px solid rgba(0,0,0,0.08)',
+                }}
               >
-                {section.label}
+                {section.shortLabel}
               </button>
             ))}
           </div>
 
-          <div className="px-6 py-6 pb-10">
+          <div className="px-6 py-6 pb-12">
             {(() => {
               const SectionComponent = SECTION_COMPONENTS[activeSection]
               return SectionComponent
@@ -80,16 +89,26 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
         <SummaryPanel activeSection={activeSection} lineItems={lineItems} onUpdateQty={handleUpdateQty} />
       </div>
 
-      {/* Mobile bottom bar — summary CTA */}
-      <div className="lg:hidden sticky bottom-0 z-30 bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-4 print:hidden">
+      {/* Mobile bottom bar */}
+      <div
+        className="lg:hidden sticky bottom-0 z-30 px-4 py-3 flex items-center justify-between gap-4 print:hidden"
+        style={{
+          background: 'rgba(242,242,247,0.92)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(0,0,0,0.08)',
+        }}
+      >
         <div>
-          <p className="text-xs font-semibold text-brand-black">Quote Total</p>
-          <p className="text-sm font-bold text-brand-black tabular-nums">—</p>
+          <p className="text-[11px] font-medium" style={{ color: '#6e6e73' }}>Quote Total</p>
+          <p className="text-[15px] font-bold text-brand-black tabular-nums">
+            {total > 0 ? `$${total.toFixed(2)}` : '—'}
+          </p>
         </div>
         <button
-          className="inline-flex items-center gap-1.5 rounded-lg bg-action px-5 py-2.5 text-sm font-semibold
-                     text-brand-black transition-all hover:bg-action-dark active:scale-[0.99]
-                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/50"
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[13px] font-semibold rounded-xl
+                     transition-all active:scale-[0.99] focus-visible:outline-none"
+          style={{ background: '#c8102e', color: 'white' }}
         >
           Generate Quote
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

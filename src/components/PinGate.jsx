@@ -39,7 +39,6 @@ export default function PinGate({ correctPin, onAuthenticated, exiting }) {
     }
   }, [pin, correctPin, onAuthenticated])
 
-  // Physical keyboard support
   useEffect(() => {
     function onKeyDown(e) {
       if (e.key >= '0' && e.key <= '9') handleKey(e.key)
@@ -51,77 +50,109 @@ export default function PinGate({ correctPin, onAuthenticated, exiting }) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-brand-accent transition-opacity${exiting ? ' gate-fade-out' : ''}`}
-      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-all${exiting ? ' gate-fade-out' : ''}`}
+      style={{
+        background: 'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(200,16,46,0.18) 0%, transparent 70%), #0a0a0c',
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}
     >
-      {/* Subtle grid overlay for depth */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
+      {/* Subtle noise texture overlay */}
+      <div className="absolute inset-0 opacity-[0.025]"
         style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)',
-          backgroundSize: '40px 40px'
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'1\'/%3E%3C/svg%3E")',
         }}
       />
 
-      <div className="relative flex flex-col items-center gap-10 px-6 w-full max-w-xs">
-        {/* Logo */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-lg overflow-hidden backdrop-blur-sm">
-            <img src="/logo.png" alt="Chesterton" className="w-14 h-14 object-contain mix-blend-multiply" />
+      <div className="relative flex flex-col items-center gap-10 px-6 w-full max-w-[280px]">
+
+        {/* Logo + wordmark */}
+        <div className="flex flex-col items-center gap-5">
+          <div
+            className="w-[72px] h-[72px] rounded-[20px] flex items-center justify-center overflow-hidden"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 0 0 1px rgba(200,16,46,0.2), 0 8px 32px rgba(0,0,0,0.4)',
+            }}
+          >
+            <img src="/logo.png" alt="Chesterton" className="w-12 h-12 object-contain mix-blend-multiply" />
           </div>
           <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50 mb-1">A.W. Chesterton</p>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Pricing Tool</h1>
-            <p className="text-sm text-white/60 mt-1">Enter your PIN to continue</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] mb-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              A.W. Chesterton
+            </p>
+            <h1 className="text-[22px] font-semibold text-white tracking-tight leading-none">Pricing Tool</h1>
+            <p className="text-[13px] mt-2" style={{ color: 'rgba(255,255,255,0.38)' }}>Enter your PIN to continue</p>
           </div>
         </div>
 
         {/* PIN dots */}
         <div
           ref={dotsRef}
-          className={`flex gap-4 ${shaking ? 'pin-shake' : ''}`}
+          className={`flex gap-5 ${shaking ? 'pin-shake' : ''}`}
         >
           {[0,1,2,3].map(i => (
             <div
               key={i}
-              className={`w-4 h-4 rounded-full border-2 transition-all duration-150 ${
+              className={`w-3 h-3 rounded-full transition-all duration-200 ${
                 i < pin.length
                   ? error
-                    ? 'bg-red-200 border-red-200 scale-110'
-                    : 'bg-white border-white scale-110'
-                  : 'bg-transparent border-white/40'
+                    ? 'scale-110'
+                    : 'scale-110 pin-dot-fill'
+                  : ''
               }`}
+              style={{
+                background: i < pin.length
+                  ? error ? '#c8102e' : 'rgba(255,255,255,0.92)'
+                  : 'rgba(255,255,255,0.18)',
+                border: i < pin.length ? 'none' : '1px solid rgba(255,255,255,0.25)',
+              }}
             />
           ))}
         </div>
 
         {/* Error message */}
-        <div className={`text-sm font-medium text-white/70 -mt-6 transition-opacity duration-200 ${error ? 'opacity-100' : 'opacity-0'}`}>
+        <div
+          className={`text-[12px] font-medium -mt-6 transition-all duration-200 ${error ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
+          style={{ color: '#c8102e' }}
+        >
           Incorrect PIN — try again
         </div>
 
         {/* Keypad */}
-        <div className="grid grid-cols-3 gap-3 w-full">
+        <div className="grid grid-cols-3 gap-2.5 w-full">
           {KEYPAD.flat().map((key, i) => {
             if (key === '') return <div key={i} />
+            const isBackspace = key === '⌫'
             return (
               <button
                 key={i}
                 onClick={() => handleKey(key)}
-                className="h-14 rounded-2xl bg-white/10 border border-white/20 text-white text-xl font-semibold
-                           hover:bg-white/20 active:bg-white/30 active:scale-95
-                           transition-all select-none
-                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                aria-label={key === '⌫' ? 'Delete' : key}
+                className="h-[58px] flex flex-col items-center justify-center select-none
+                           transition-all duration-100 active:scale-95 focus-visible:outline-none"
+                style={{
+                  background: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  borderRadius: '14px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+                }}
+                aria-label={isBackspace ? 'Delete' : key}
               >
-                {key}
+                {isBackspace ? (
+                  <svg className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6H8.828a2 2 0 00-1.414.586l-4 4a2 2 0 000 2.828l4 4A2 2 0 008.828 18H12m4-12l4 4m0 0l-4 4m4-4H12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12H12" />
+                  </svg>
+                ) : (
+                  <span className="text-[22px] font-light text-white leading-none">{key}</span>
+                )}
               </button>
             )
           })}
         </div>
 
         {/* Footer */}
-        <p className="text-[11px] text-white/30 text-center -mt-4">
+        <p className="text-[10px] -mt-4 text-center" style={{ color: 'rgba(255,255,255,0.2)' }}>
           Internal use only · Authorized personnel only
         </p>
       </div>

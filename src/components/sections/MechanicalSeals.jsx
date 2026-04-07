@@ -6,7 +6,6 @@ const TYPE_LABELS = {
   SPK:  'Spare Parts Kit',
 }
 
-// Dropdowns (model, size, face, elastomer) — type is now a toggle
 const FILTER_DEFS = [
   { key: 'model',     label: 'Model',     optionLabel: v => v },
   { key: 'size',      label: 'Size',      optionLabel: v => formatSize(v) },
@@ -133,28 +132,47 @@ export default function MechanicalSeals({ onAddToQuote }) {
   return (
     <div className="step-enter">
       {/* Section header */}
-      <div className="mb-6">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray mb-2">Product Line</p>
-        <h2 className="text-2xl font-bold text-brand-black tracking-tight">Mechanical Seals</h2>
-        <p className="text-sm text-cool-gray mt-1.5">Split seal price list — 442, 442C, and 442HP models.</p>
+      <div className="mb-7">
+        <p
+          className="text-[10px] font-semibold uppercase mb-2"
+          style={{ color: '#6e6e73', letterSpacing: '0.12em' }}
+        >
+          Product Line
+        </p>
+        <h2 className="text-[28px] font-bold text-brand-black tracking-tight leading-tight">Mechanical Seals</h2>
+        <p className="text-[14px] mt-1.5" style={{ color: '#6e6e73' }}>
+          Split seal price list — 442, 442C, and 442HP models.
+        </p>
       </div>
 
-      {/* Filter bar */}
-      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 mb-4 flex flex-col gap-3">
-
+      {/* Filter card */}
+      <div
+        className="rounded-2xl p-5 mb-4 flex flex-col gap-4"
+        style={{
+          background: 'white',
+          border: '1px solid rgba(0,0,0,0.06)',
+          boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
+        }}
+      >
         {/* Row 1: Type + Units toggles */}
-        <div className="flex flex-wrap gap-4 items-end">
-          {/* Type toggle */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">Type</label>
-            <div className="flex rounded border border-gray-200 overflow-hidden text-xs font-semibold">
-              {ALL_TYPES.map((type, i) => (
+        <div className="flex flex-wrap gap-5 items-end">
+          {/* Type segmented control */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>Type</label>
+            <div
+              className="flex p-0.5 gap-0.5 rounded-[10px]"
+              style={{ background: 'rgba(0,0,0,0.06)' }}
+            >
+              {ALL_TYPES.map(type => (
                 <button
                   key={type}
                   onClick={() => toggleType(type)}
-                  className={`px-3 py-1.5 transition-colors focus:outline-none
-                    ${i > 0 ? 'border-l border-gray-200' : ''}
-                    ${activeTypes.has(type) ? 'bg-brand-accent text-white' : 'bg-white text-cool-gray hover:bg-gray-50'}`}
+                  className="px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all focus:outline-none"
+                  style={{
+                    background: activeTypes.has(type) ? '#c8102e' : 'transparent',
+                    color: activeTypes.has(type) ? 'white' : '#6e6e73',
+                    boxShadow: activeTypes.has(type) ? '0 1px 4px rgba(200,16,46,0.3)' : 'none',
+                  }}
                 >
                   {TYPE_LABELS[type]}
                 </button>
@@ -162,17 +180,23 @@ export default function MechanicalSeals({ onAddToQuote }) {
             </div>
           </div>
 
-          {/* Units toggle */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">Units</label>
-            <div className="flex rounded border border-gray-200 overflow-hidden text-xs font-semibold">
-              {ALL_UNITS.map((unit, i) => (
+          {/* Units segmented control */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>Units</label>
+            <div
+              className="flex p-0.5 gap-0.5 rounded-[10px]"
+              style={{ background: 'rgba(0,0,0,0.06)' }}
+            >
+              {ALL_UNITS.map(unit => (
                 <button
                   key={unit}
                   onClick={() => toggleUnit(unit)}
-                  className={`px-3 py-1.5 transition-colors focus:outline-none
-                    ${i > 0 ? 'border-l border-gray-200' : ''}
-                    ${activeUnits.has(unit) ? 'bg-brand-accent text-white' : 'bg-white text-cool-gray hover:bg-gray-50'}`}
+                  className="px-3.5 py-1.5 rounded-[8px] text-[12px] font-medium transition-all focus:outline-none"
+                  style={{
+                    background: activeUnits.has(unit) ? '#c8102e' : 'transparent',
+                    color: activeUnits.has(unit) ? 'white' : '#6e6e73',
+                    boxShadow: activeUnits.has(unit) ? '0 1px 4px rgba(200,16,46,0.3)' : 'none',
+                  }}
                 >
                   {unit === 'inch' ? 'Inch' : 'Metric'}
                 </button>
@@ -180,11 +204,11 @@ export default function MechanicalSeals({ onAddToQuote }) {
             </div>
           </div>
 
-          {/* Clear all — pinned to row 1 right */}
           {isFiltered && (
             <button
               onClick={clearAll}
-              className="text-[11px] font-semibold text-brand-accent hover:text-brand-accent-dark flex items-center gap-1 self-end ml-auto"
+              className="text-[12px] font-medium flex items-center gap-1 self-end ml-auto transition-opacity hover:opacity-70"
+              style={{ color: '#c8102e' }}
             >
               Clear all
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -194,19 +218,24 @@ export default function MechanicalSeals({ onAddToQuote }) {
           )}
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-gray-100" />
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }} />
 
         {/* Row 2: Dropdown filters */}
         <div className="flex flex-wrap gap-3 items-end">
           {FILTER_DEFS.map(({ key, label, optionLabel }) => (
-            <div key={key} className="flex flex-col gap-1 min-w-[110px]">
-              <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">{label}</label>
+            <div key={key} className="flex flex-col gap-1.5 min-w-[110px]">
+              <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>{label}</label>
               <select
                 value={filters[key]}
                 onChange={e => setFilter(key, e.target.value)}
-                className={`text-xs rounded border px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent/30 transition-colors cursor-pointer
-                  ${filters[key] ? 'border-brand-accent text-brand-black font-semibold' : 'border-gray-200 text-cool-gray'}`}
+                className="text-[13px] px-3 py-2 rounded-[10px] focus:outline-none focus:ring-2 transition-all cursor-pointer appearance-none"
+                style={{
+                  background: filters[key] ? 'rgba(200,16,46,0.05)' : 'rgba(0,0,0,0.04)',
+                  border: filters[key] ? '1px solid rgba(200,16,46,0.3)' : '1px solid rgba(0,0,0,0.08)',
+                  color: filters[key] ? '#1c1c1e' : '#6e6e73',
+                  fontWeight: filters[key] ? 500 : 400,
+                  minWidth: '110px',
+                }}
               >
                 <option value="">All</option>
                 {optionsFor[key]?.map(v => (
@@ -217,12 +246,15 @@ export default function MechanicalSeals({ onAddToQuote }) {
           ))}
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-gray-100" />
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }} />
 
         {/* Row 3: Search */}
         <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+            style={{ color: 'rgba(0,0,0,0.3)' }}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
           </svg>
           <input
@@ -230,33 +262,49 @@ export default function MechanicalSeals({ onAddToQuote }) {
             value={search}
             onChange={e => { setSearch(e.target.value); resetPage() }}
             placeholder="Search item number or description — use * as wildcard (e.g. 442*RSC/CB*EP)"
-            className="w-full text-xs pl-8 pr-8 py-2 rounded border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-colors placeholder:text-gray-300"
+            className="w-full text-[13px] pl-10 pr-9 py-2.5 rounded-[10px] focus:outline-none focus:ring-2 transition-all"
+            style={{
+              background: 'rgba(0,0,0,0.04)',
+              border: search ? '1px solid rgba(200,16,46,0.3)' : '1px solid rgba(0,0,0,0.08)',
+              color: '#1c1c1e',
+              focusRingColor: 'rgba(200,16,46,0.2)',
+            }}
           />
           {search && (
-            <button onClick={() => { setSearch(''); resetPage() }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <button
+              onClick={() => { setSearch(''); resetPage() }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-60"
+              style={{ color: '#6e6e73' }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
         </div>
-
       </div>
 
-      {/* Results count + page size */}
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-[11px] text-cool-gray">
-          {visibleRows.length.toLocaleString()} {visibleRows.length === 1 ? 'result' : 'results'}
-          {isFiltered && <span className="text-gray-400"> of {SEAL_DATA.length.toLocaleString()} total</span>}
+      {/* Results bar */}
+      <div className="flex items-center justify-between mb-2.5 px-1">
+        <span className="text-[12px]" style={{ color: '#6e6e73' }}>
+          <span className="font-semibold text-brand-black">{visibleRows.length.toLocaleString()}</span>
+          {' '}{visibleRows.length === 1 ? 'result' : 'results'}
+          {isFiltered && (
+            <span style={{ color: 'rgba(0,0,0,0.3)' }}> of {SEAL_DATA.length.toLocaleString()}</span>
+          )}
         </span>
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-cool-gray">Show</span>
+          <span className="text-[11px]" style={{ color: '#6e6e73' }}>Show</span>
           {[25, 50, 100].map(n => (
             <button
               key={n}
               onClick={() => { setPageSize(n); setPage(1) }}
-              className={`text-[11px] px-2 py-0.5 rounded border transition-colors focus:outline-none
-                ${pageSize === n ? 'bg-brand-accent text-white border-brand-accent font-semibold' : 'border-gray-200 text-cool-gray hover:border-brand-accent hover:text-brand-black'}`}
+              className="text-[11px] px-2.5 py-1 rounded-[7px] font-medium transition-all focus:outline-none"
+              style={{
+                background: pageSize === n ? '#c8102e' : 'rgba(0,0,0,0.05)',
+                color: pageSize === n ? 'white' : '#6e6e73',
+                border: pageSize === n ? '1px solid transparent' : '1px solid rgba(0,0,0,0.08)',
+              }}
             >
               {n}
             </button>
@@ -265,41 +313,58 @@ export default function MechanicalSeals({ onAddToQuote }) {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: 'white',
+          border: '1px solid rgba(0,0,0,0.06)',
+          boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
+        }}
+      >
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left py-2.5 px-4 font-semibold text-cool-gray uppercase tracking-wider text-[10px] w-[130px]">Item Number</th>
-                <th className="text-left py-2.5 px-4 font-semibold text-cool-gray uppercase tracking-wider text-[10px]">Description</th>
-                <th className="text-right py-2.5 px-4 font-semibold text-cool-gray uppercase tracking-wider text-[10px] w-[100px]">List Price</th>
-                <th className="w-[44px]" />
+              <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
+                <th className="text-left py-3 px-5 font-semibold uppercase w-[130px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Item Number</th>
+                <th className="text-left py-3 px-4 font-semibold uppercase" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Description</th>
+                <th className="text-right py-3 px-5 font-semibold uppercase w-[110px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>List Price</th>
+                <th className="w-[52px]" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {visibleRows.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-cool-gray text-xs">
+                  <td colSpan={4} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
                     No items match the selected filters.
                   </td>
                 </tr>
               ) : (
                 pagedRows.map((row, i) => (
-                  <tr key={`${row.itemNumber}-${i}`} className="hover:bg-brand-accent-light/40 transition-colors">
-                    <td className="py-2 px-4 font-mono text-[11px] text-brand-black whitespace-nowrap">{row.itemNumber}</td>
-                    <td className="py-2 px-4 text-brand-black">
+                  <tr
+                    key={`${row.itemNumber}-${i}`}
+                    className="transition-colors group"
+                    style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(242,242,247,0.7)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td className="py-3 px-5 font-mono text-[11px] font-medium whitespace-nowrap" style={{ color: '#1c1c1e' }}>{row.itemNumber}</td>
+                    <td className="py-3 px-4 text-[13px]" style={{ color: '#1c1c1e' }}>
                       {row.description}
-                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-gray-100 text-cool-gray">
+                      <span
+                        className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold"
+                        style={{ background: 'rgba(0,0,0,0.05)', color: '#6e6e73' }}
+                      >
                         {TYPE_LABELS[row.type] ?? row.type}
                       </span>
                     </td>
-                    <td className="py-2 px-4 text-right font-semibold text-brand-black tabular-nums whitespace-nowrap">
+                    <td className="py-3 px-5 text-right text-[13px] font-semibold tabular-nums whitespace-nowrap" style={{ color: '#1c1c1e' }}>
                       {formatPrice(row.listPrice)}
                     </td>
-                    <td className="py-2 px-2">
+                    <td className="py-3 px-3">
                       <button
                         onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice })}
-                        className="w-6 h-6 flex items-center justify-center rounded-full bg-brand-accent text-white hover:bg-brand-accent-dark transition-colors focus:outline-none"
+                        className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
+                        style={{ background: '#c8102e', color: 'white' }}
                         title="Add to quote"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -313,33 +378,37 @@ export default function MechanicalSeals({ onAddToQuote }) {
             </tbody>
           </table>
         </div>
+
         {/* Pagination footer */}
         {totalPages > 1 && (
-          <div className="border-t border-gray-100 px-4 py-2.5 bg-gray-50 flex items-center justify-between">
-            <span className="text-[11px] text-cool-gray">
+          <div
+            className="px-5 py-3 flex items-center justify-between"
+            style={{ borderTop: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}
+          >
+            <span className="text-[11px]" style={{ color: '#6e6e73' }}>
               Page {clampedPage} of {totalPages} &mdash; {((clampedPage - 1) * pageSize + 1).toLocaleString()}–{Math.min(clampedPage * pageSize, visibleRows.length).toLocaleString()} of {visibleRows.length.toLocaleString()}
             </span>
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage(1)}
-                disabled={clampedPage === 1}
-                className="px-2 py-1 text-[11px] rounded border border-gray-200 text-cool-gray disabled:opacity-30 hover:enabled:border-brand-accent hover:enabled:text-brand-black transition-colors focus:outline-none"
-              >«</button>
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={clampedPage === 1}
-                className="px-2 py-1 text-[11px] rounded border border-gray-200 text-cool-gray disabled:opacity-30 hover:enabled:border-brand-accent hover:enabled:text-brand-black transition-colors focus:outline-none"
-              >‹</button>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={clampedPage === totalPages}
-                className="px-2 py-1 text-[11px] rounded border border-gray-200 text-cool-gray disabled:opacity-30 hover:enabled:border-brand-accent hover:enabled:text-brand-black transition-colors focus:outline-none"
-              >›</button>
-              <button
-                onClick={() => setPage(totalPages)}
-                disabled={clampedPage === totalPages}
-                className="px-2 py-1 text-[11px] rounded border border-gray-200 text-cool-gray disabled:opacity-30 hover:enabled:border-brand-accent hover:enabled:text-brand-black transition-colors focus:outline-none"
-              >»</button>
+              {[
+                { label: '«', action: () => setPage(1), disabled: clampedPage === 1 },
+                { label: '‹', action: () => setPage(p => Math.max(1, p - 1)), disabled: clampedPage === 1 },
+                { label: '›', action: () => setPage(p => Math.min(totalPages, p + 1)), disabled: clampedPage === totalPages },
+                { label: '»', action: () => setPage(totalPages), disabled: clampedPage === totalPages },
+              ].map(({ label, action, disabled }) => (
+                <button
+                  key={label}
+                  onClick={action}
+                  disabled={disabled}
+                  className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[12px] font-medium transition-all focus:outline-none disabled:opacity-25"
+                  style={{
+                    background: 'rgba(0,0,0,0.05)',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    color: '#1c1c1e',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
         )}
