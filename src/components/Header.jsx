@@ -6,10 +6,10 @@ export default function Header({ activeSection, onLogout }) {
 
   const sectionLabels = {
     'mechanical-seals': 'Mechanical Seals',
-    'mp': 'Metallic Packing',
-    'eps': 'EPS',
-    'arc': 'ARC Composites',
-    'il': 'Industrial Lubricants',
+    'packing-gaskets': 'Packing & Gaskets',
+    'polymer-seals': 'Polymer Seals',
+    'protective-coatings': 'Protective Coatings',
+    'il-mro': 'IL/MRO',
   }
 
   return (
