@@ -194,14 +194,54 @@ function makeSheet(rows) {
   return ws
 }
 
+function makeTermsSheet() {
+  const lines = [
+    ['A.W. Chesterton Company — Mechanical Seals Price List'],
+    ['Terms & Conditions'],
+    [],
+    ['CONFIDENTIALITY'],
+    ['This price list is confidential and intended solely for authorized A.W. Chesterton distributors and sales personnel.'],
+    ['Unauthorized reproduction or distribution is strictly prohibited.'],
+    [],
+    ['PRICING'],
+    ['All prices are in USD and represent U.S. List Price. Prices are subject to change without notice.'],
+    ['Applicable discounts, surcharges, or freight charges are not reflected in this document.'],
+    [],
+    ['VALIDITY'],
+    ['Prices listed are valid at the time of export. Please verify current pricing with your Chesterton representative'],
+    ['or the official pricing system prior to quoting.'],
+    [],
+    ['WARRANTIES & LIABILITY'],
+    ['A.W. Chesterton Company makes no warranties, express or implied, regarding the accuracy or completeness'],
+    ['of this price list. Chesterton shall not be liable for any errors or omissions.'],
+    [],
+    ['CONTACT'],
+    ['For pricing questions or to place an order, contact your local Chesterton sales representative'],
+    ['or visit www.chesterton.com.'],
+    [],
+    ['© A.W. Chesterton Company. All rights reserved.'],
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(lines)
+  ws['!cols'] = [{ wch: 100 }]
+  // Bold the title and section headers
+  const boldRows = [0, 1, 3, 7, 11, 15, 19, 23]
+  for (const r of boldRows) {
+    const cell = ws[XLSX.utils.encode_cell({ r, c: 0 })]
+    if (cell) cell.s = { font: { bold: true } }
+  }
+  return ws
+}
+
 function exportOneList(rows) {
   const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, makeTermsSheet(), 'Terms & Conditions')
   XLSX.utils.book_append_sheet(wb, makeSheet(rows), 'All Items')
   XLSX.writeFile(wb, 'MS_Pricing_Export.xlsx')
 }
 
 function exportByModel(rows) {
   const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, makeTermsSheet(), 'Terms & Conditions')
   const groups = {}
   for (const row of rows) {
     if (!groups[row.model]) groups[row.model] = []
@@ -215,6 +255,7 @@ function exportByModel(rows) {
 
 function exportByModelType(rows) {
   const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, makeTermsSheet(), 'Terms & Conditions')
   const groups = {}
   for (const row of rows) {
     const key = `${row.model} ${row.type}`
