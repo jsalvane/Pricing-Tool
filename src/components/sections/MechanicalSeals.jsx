@@ -243,14 +243,25 @@ export default function MechanicalSeals({ onAddToQuote }) {
 
       </div>
 
-      {/* Results count */}
+      {/* Results count + page size */}
       <div className="flex items-center justify-between mb-2 px-1">
         <span className="text-[11px] text-cool-gray">
           {visibleRows.length.toLocaleString()} {visibleRows.length === 1 ? 'result' : 'results'}
+          {isFiltered && <span className="text-gray-400"> of {SEAL_DATA.length.toLocaleString()} total</span>}
         </span>
-        {isFiltered && (
-          <span className="text-[11px] text-cool-gray">of {SEAL_DATA.length.toLocaleString()} total items</span>
-        )}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-cool-gray">Show</span>
+          {[25, 50, 100].map(n => (
+            <button
+              key={n}
+              onClick={() => { setPageSize(n); setPage(1) }}
+              className={`text-[11px] px-2 py-0.5 rounded border transition-colors focus:outline-none
+                ${pageSize === n ? 'bg-brand-accent text-white border-brand-accent font-semibold' : 'border-gray-200 text-cool-gray hover:border-brand-accent hover:text-brand-black'}`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Table */}
