@@ -129,8 +129,27 @@ export default function MechanicalSeals({ onAddToQuote }) {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 mb-4">
+      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 mb-4 flex flex-col gap-3">
+
+        {/* Row 1: Type + Units toggles */}
         <div className="flex flex-wrap gap-4 items-end">
+          {/* Type toggle */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">Type</label>
+            <div className="flex rounded border border-gray-200 overflow-hidden text-xs font-semibold">
+              {ALL_TYPES.map((type, i) => (
+                <button
+                  key={type}
+                  onClick={() => toggleType(type)}
+                  className={`px-3 py-1.5 transition-colors focus:outline-none
+                    ${i > 0 ? 'border-l border-gray-200' : ''}
+                    ${activeTypes.has(type) ? 'bg-brand-accent text-white' : 'bg-white text-cool-gray hover:bg-gray-50'}`}
+                >
+                  {TYPE_LABELS[type]}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Units toggle */}
           <div className="flex flex-col gap-1">
@@ -150,25 +169,25 @@ export default function MechanicalSeals({ onAddToQuote }) {
             </div>
           </div>
 
-          {/* Type toggle */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">Type</label>
-            <div className="flex rounded border border-gray-200 overflow-hidden text-xs font-semibold">
-              {ALL_TYPES.map((type, i) => (
-                <button
-                  key={type}
-                  onClick={() => toggleType(type)}
-                  className={`px-3 py-1.5 transition-colors focus:outline-none
-                    ${i > 0 ? 'border-l border-gray-200' : ''}
-                    ${activeTypes.has(type) ? 'bg-brand-accent text-white' : 'bg-white text-cool-gray hover:bg-gray-50'}`}
-                >
-                  {TYPE_LABELS[type]}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Clear all — pinned to row 1 right */}
+          {isFiltered && (
+            <button
+              onClick={clearAll}
+              className="text-[11px] font-semibold text-brand-accent hover:text-brand-accent-dark flex items-center gap-1 self-end ml-auto"
+            >
+              Clear all
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
 
-          {/* Dropdown filters */}
+        {/* Divider */}
+        <div className="border-t border-gray-100" />
+
+        {/* Row 2: Dropdown filters */}
+        <div className="flex flex-wrap gap-3 items-end">
           {FILTER_DEFS.map(({ key, label, optionLabel }) => (
             <div key={key} className="flex flex-col gap-1 min-w-[110px]">
               <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">{label}</label>
@@ -185,36 +204,37 @@ export default function MechanicalSeals({ onAddToQuote }) {
               </select>
             </div>
           ))}
+        </div>
 
-          {/* Search */}
-          <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">Search</label>
-            <div className="relative">
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        {/* Divider */}
+        <div className="border-t border-gray-100" />
+
+        {/* Row 3: Search */}
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search item number or description — use * as wildcard (e.g. 442*RSC/CB*EP)"
+            className="w-full text-xs pl-8 pr-8 py-2 rounded border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-colors placeholder:text-gray-300"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Item #, description… (* wildcard)"
-                className="w-full text-xs pl-7 pr-3 py-1.5 rounded border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-colors placeholder:text-gray-300"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
+            </button>
+          )}
+        </div>
 
-          {/* Clear all */}
-          {isFiltered && (
+        {/* phantom close for old Clear all block below — replaced above */}
+        {false && (
             <button
               onClick={clearAll}
-              className="text-[11px] font-semibold text-brand-accent hover:text-brand-accent-dark flex items-center gap-1 pb-0.5 self-end"
+              className=""
             >
               Clear all
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
