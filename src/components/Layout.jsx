@@ -10,10 +10,10 @@ import IL from './sections/IL.jsx'
 
 const SECTION_COMPONENTS = {
   'mechanical-seals': MechanicalSeals,
-  'mp': MP,
-  'eps': EPS,
-  'arc': ARC,
-  'il': IL,
+  'packing-gaskets': MP,
+  'polymer-seals': EPS,
+  'protective-coatings': ARC,
+  'il-mro': IL,
 }
 
 export default function Layout({ activeSection, onSectionChange, onLogout }) {
@@ -28,7 +28,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
     }
   }, [activeSection])
 
-  const SectionContent = SECTION_COMPONENTS[activeSection] || MechanicalSeals
+  const SectionContent = SECTION_COMPONENTS[activeSection] ?? MechanicalSeals
   const currentSection = SECTIONS.find(s => s.id === activeSection)
 
   return (
