@@ -177,7 +177,7 @@ function makeSheet(rows) {
   const data = [EXPORT_HEADERS, ...rows.map(rowToArr)]
   const ws = XLSX.utils.aoa_to_sheet(data)
   const range = XLSX.utils.decode_range(ws['!ref'])
-  const priceCol = EXPORT_HEADERS.length - 1 // last column = List Price
+  const priceCol = EXPORT_HEADERS.indexOf('List Price')
   for (let r = range.s.r; r <= range.e.r; r++) {
     const cell = ws[XLSX.utils.encode_cell({ r, c: priceCol })]
     if (!cell) continue
@@ -188,7 +188,8 @@ function makeSheet(rows) {
     }
   }
   // Bold the rest of the header row too
-  for (let c = range.s.c; c < priceCol; c++) {
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    if (c === priceCol) continue
     const cell = ws[XLSX.utils.encode_cell({ r: 0, c })]
     if (cell) cell.s = { font: { bold: true } }
   }
