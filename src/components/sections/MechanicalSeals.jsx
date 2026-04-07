@@ -8,11 +8,13 @@ const TYPE_LABELS = {
 }
 
 const FILTER_DEFS = [
-  { key: 'model',     label: 'Model',     optionLabel: v => v },
-  { key: 'size',      label: 'Size',      optionLabel: v => formatSize(v) },
-  { key: 'face',      label: 'Face',      optionLabel: v => v },
-  { key: 'elastomer', label: 'Elastomer', optionLabel: v => v },
+  { key: 'model',     label: 'Seal Model', optionLabel: v => v },
+  { key: 'size',      label: 'Size',       optionLabel: v => formatSize(v) },
+  { key: 'face',      label: 'Face',       optionLabel: v => v },
+  { key: 'elastomer', label: 'Elastomer',  optionLabel: v => v },
 ]
+
+const ALL_METALS = ['316SS']
 
 function formatSize(s) {
   const n = parseFloat(s)
@@ -352,6 +354,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
   const [activeUnits, setActiveUnits] = useState(new Set(['inch', 'metric']))
   const [activeTypes, setActiveTypes] = useState(new Set(['SA', 'SPK']))
   const [filters, setFilters]         = useState(emptyFilters())
+  const [metalFilter, setMetalFilter] = useState(new Set())
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(25)
 
@@ -438,13 +441,14 @@ export default function MechanicalSeals({ onAddToQuote }) {
   }, [visibleRows])
 
   const isFiltered = Object.values(filters).some(s => s.size > 0) || search ||
-    activeUnits.size < 2 || activeTypes.size < 2
+    activeUnits.size < 2 || activeTypes.size < 2 || metalFilter.size > 0
 
   const clearAll = () => {
     setFilters(emptyFilters())
     setSearch('')
     setActiveUnits(new Set(['inch', 'metric']))
     setActiveTypes(new Set(['SA', 'SPK']))
+    setMetalFilter(new Set())
     resetPage()
   }
 
@@ -481,7 +485,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
         <div className="flex flex-wrap gap-5 items-end">
           {/* Type segmented control */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>Type</label>
+            <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>Product Type</label>
             <div
               className="flex p-0.5 gap-0.5 rounded-[10px]"
               style={{ background: 'rgba(0,0,0,0.06)' }}
@@ -561,6 +565,13 @@ export default function MechanicalSeals({ onAddToQuote }) {
               optionLabel={optionLabel}
             />
           ))}
+          <MultiSelect
+            label="Metals"
+            options={ALL_METALS}
+            selected={metalFilter}
+            onChange={val => { setMetalFilter(val); resetPage() }}
+            optionLabel={v => v}
+          />
         </div>
 
         <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }} />
