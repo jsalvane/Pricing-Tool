@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import * as XLSX from 'xlsx'
 import { SEAL_DATA } from '../../data/sealData'
 
 const TYPE_LABELS = {
@@ -151,6 +152,149 @@ function Checkbox({ checked }) {
     </span>
   )
 }
+
+// ── Export helpers ──────────────────────────────────────────────────────────
+
+const EXPORT_HEADERS = ['Item Number', 'Model', 'Description', 'Type', 'Size', 'Face', 'Elastomer', 'List Price']
+
+function rowToArr(row) {
+  return [
+    row.itemNumber,
+    row.model,
+    row.description,
+    TYPE_LABELS[row.type] ?? row.type,
+    formatSize(row.size),
+    row.face,
+    row.elastomer,
+    row.listPrice,
+  ]
+}
+
+function makeSheet(rows) {
+  const data = [EXPORT_HEADERS, ...rows.map(rowToArr)]
+  const ws = XLSX.utils.aoa_to_sheet(data)
+  // Bold header row
+  const range = XLSX.utils.decode_range(ws['!ref'])
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })]
+    if (cell) cell.s = { font: { bold: true } }
+  }
+  // Column widths
+  ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 42 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }]
+  return ws
+}
+
+function exportOneList(rows) {
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, makeSheet(rows), 'All Items')
+  XLSX.writeFile(wb, 'MS_Pricing_Export.xlsx')
+}
+
+function exportByModel(rows) {
+  const wb = XLSX.utils.book_new()
+  const groups = {}
+  for (const row of rows) {
+    if (!groups[row.model]) groups[row.model] = []
+    groups[row.model].push(row)
+  }
+  for (const model of Object.keys(groups).sort()) {
+    XLSX.utils.book_append_sheet(wb, makeSheet(groups[model]), model)
+  }
+  XLSX.writeFile(wb, 'MS_Pricing_Export_By_Model.xlsx')
+}
+
+function exportByModelType(rows) {
+  const wb = XLSX.utils.book_new()
+  const groups = {}
+  for (const row of rows) {
+    const key = `${row.model} ${row.type}`
+    if (!groups[key]) groups[key] = []
+    groups[key].push(row)
+  }
+  for (const key of Object.keys(groups).sort()) {
+    XLSX.utils.book_append_sheet(wb, makeSheet(groups[key]), key)
+  }
+  XLSX.writeFile(wb, 'MS_Pricing_Export_By_Model_Type.xlsx')
+}
+
+// ── Export dropdown button ───────────────────────────────────────────────────
+
+function ExportButton({ rows }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const options = [
+    { label: 'One List', sub: '1 tab — all items', action: () => { exportOneList(rows); setOpen(false) } },
+    { label: 'By Model', sub: 'Tab per model (442, 442C…)', action: () => { exportByModel(rows); setOpen(false) } },
+    { label: 'By Model / Type', sub: 'Tab per model + SA/SPK', action: () => { exportByModelType(rows); setOpen(false) } },
+  ]
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-[8px] transition-all focus:outline-none"
+        style={{
+          background: '#c8102e',
+          color: 'white',
+          boxShadow: '0 1px 4px rgba(200,16,46,0.3)',
+        }}
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+        </svg>
+        Export
+        <svg
+          className="w-3 h-3"
+          style={{ opacity: 0.7, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1.5 rounded-[12px] z-50 overflow-hidden"
+          style={{
+            background: 'white',
+            border: '1px solid rgba(0,0,0,0.1)',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.15)',
+            minWidth: '220px',
+          }}
+        >
+          <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+            <p className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>
+              MS Pricing Export — {rows.length.toLocaleString()} items
+            </p>
+          </div>
+          {options.map(({ label, sub, action }) => (
+            <button
+              key={label}
+              onClick={action}
+              className="w-full text-left px-3 py-2.5 transition-colors flex flex-col gap-0.5"
+              style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.03)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <span className="text-[13px] font-medium" style={{ color: '#1c1c1e' }}>{label}</span>
+              <span className="text-[11px]" style={{ color: '#6e6e73' }}>{sub}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 export default function MechanicalSeals({ onAddToQuote }) {
   const [search, setSearch]           = useState('')
@@ -415,7 +559,9 @@ export default function MechanicalSeals({ onAddToQuote }) {
             <span style={{ color: 'rgba(0,0,0,0.3)' }}> of {SEAL_DATA.length.toLocaleString()}</span>
           )}
         </span>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-3">
+          <ExportButton rows={visibleRows} />
+          <div className="flex items-center gap-1.5">
           <span className="text-[11px]" style={{ color: '#6e6e73' }}>Show</span>
           {[25, 50, 100].map(n => (
             <button
@@ -431,6 +577,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
               {n}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
@@ -448,6 +595,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
                 <th className="text-left py-3 px-5 font-semibold uppercase w-[130px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Item Number</th>
+                <th className="text-left py-3 px-4 font-semibold uppercase w-[90px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Model</th>
                 <th className="text-left py-3 px-4 font-semibold uppercase" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Description</th>
                 <th className="text-right py-3 px-5 font-semibold uppercase w-[110px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>List Price</th>
                 <th className="w-[52px]" />
@@ -456,7 +604,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
             <tbody>
               {visibleRows.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
+                  <td colSpan={5} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
                     No items match the selected filters.
                   </td>
                 </tr>
@@ -470,6 +618,14 @@ export default function MechanicalSeals({ onAddToQuote }) {
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <td className="py-3 px-5 font-mono text-[11px] font-medium whitespace-nowrap" style={{ color: '#1c1c1e' }}>{row.itemNumber}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span
+                        className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+                        style={{ background: 'rgba(200,16,46,0.07)', color: '#c8102e' }}
+                      >
+                        {row.model}
+                      </span>
+                    </td>
                     <td className="py-3 px-4 text-[13px]" style={{ color: '#1c1c1e' }}>
                       {row.description}
                       <span
