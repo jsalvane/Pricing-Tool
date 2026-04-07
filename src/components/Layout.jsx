@@ -11,7 +11,12 @@ const SECTION_COMPONENTS = {
 
 export default function Layout({ activeSection, onSectionChange, onLogout }) {
   const [renderKey, setRenderKey] = useState(0)
+  const [lineItems, setLineItems] = useState([])
   const prevSection = useRef(activeSection)
+
+  const handleAddToQuote = (item) => {
+    setLineItems(prev => [...prev, item])
+  }
 
   // Re-mount section component on change to retrigger animations
   useEffect(() => {
@@ -53,13 +58,13 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
             {(() => {
               const SectionComponent = SECTION_COMPONENTS[activeSection]
               return SectionComponent
-                ? <SectionComponent key={`${activeSection}-${renderKey}`} />
+                ? <SectionComponent key={`${activeSection}-${renderKey}`} onAddToQuote={handleAddToQuote} />
                 : <ComingSoon key={`${activeSection}-${renderKey}`} title={currentSection?.label ?? ''} />
             })()}
           </div>
         </main>
 
-        <SummaryPanel activeSection={activeSection} />
+        <SummaryPanel activeSection={activeSection} lineItems={lineItems} onRemoveItem={i => setLineItems(prev => prev.filter((_, idx) => idx !== i))} />
       </div>
 
       {/* Mobile bottom bar — summary CTA */}

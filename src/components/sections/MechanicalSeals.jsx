@@ -32,7 +32,7 @@ function sortedSizes(vals) {
   return [...vals].sort((a, b) => parseFloat(a) - parseFloat(b))
 }
 
-export default function MechanicalSeals() {
+export default function MechanicalSeals({ onAddToQuote }) {
   const [search, setSearch]     = useState('')
   const [unitSystem, setUnitSystem] = useState('both') // 'inch' | 'metric' | 'both'
   const [filters, setFilters]   = useState({ type: '', model: '', size: '', face: '', elastomer: '' })
@@ -238,12 +238,13 @@ export default function MechanicalSeals() {
                 <th className="text-right py-2.5 px-4 font-semibold text-cool-gray uppercase tracking-wider text-[10px] w-[100px]">
                   List Price
                 </th>
+                <th className="w-[44px]" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {visibleRows.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="py-12 text-center text-cool-gray text-xs">
+                  <td colSpan={4} className="py-12 text-center text-cool-gray text-xs">
                     No items match the selected filters.
                   </td>
                 </tr>
@@ -264,6 +265,17 @@ export default function MechanicalSeals() {
                     </td>
                     <td className="py-2 px-4 text-right font-semibold text-brand-black tabular-nums whitespace-nowrap">
                       {formatPrice(row.listPrice)}
+                    </td>
+                    <td className="py-2 px-2">
+                      <button
+                        onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice })}
+                        className="w-6 h-6 flex items-center justify-center rounded-full bg-brand-accent text-white hover:bg-brand-accent-dark transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/50"
+                        title="Add to quote"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 ))
