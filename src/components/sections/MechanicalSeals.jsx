@@ -34,7 +34,14 @@ function sortedSizes(vals) {
 
 export default function MechanicalSeals() {
   const [search, setSearch]     = useState('')
+  const [unitSystem, setUnitSystem] = useState('both') // 'inch' | 'metric' | 'both'
   const [filters, setFilters]   = useState({ type: '', model: '', size: '', face: '', elastomer: '' })
+
+  const unitFilter = row => {
+    if (unitSystem === 'both') return true
+    const n = parseFloat(row.size)
+    return unitSystem === 'metric' ? n >= 25 : n < 25
+  }
 
   // Build cascading filter options: each filter's options are derived from data
   // matching all OTHER currently-set filters (not itself), so choosing one
@@ -42,19 +49,20 @@ export default function MechanicalSeals() {
   const optionsFor = useMemo(() => {
     const result = {}
     FILTER_DEFS.forEach(({ key }) => {
-      // Apply all filters EXCEPT this one
-      const subset = SEAL_DATA.filter(row =>
-        FILTER_DEFS.every(f => {
-          if (f.key === key) return true         // skip self
-          if (!filters[f.key]) return true       // not set
+      const subset = SEAL_DATA.filter(row => {
+        if (!unitFilter(row)) return false
+        return FILTER_DEFS.every(f => {
+          if (f.key === key) return true
+          if (!filters[f.key]) return true
           return String(row[f.key]) === filters[f.key]
         })
-      )
+      })
       const vals = [...new Set(subset.map(r => String(r[key])))]
       result[key] = key === 'size' ? sortedSizes(vals) : vals.sort()
     })
     return result
-  }, [filters])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, unitSystem])
 
   const setFilter = (key, val) => {
     setFilters(prev => {
@@ -69,6 +77,7 @@ export default function MechanicalSeals() {
   const visibleRows = useMemo(() => {
     const q = search.trim().toLowerCase()
     return SEAL_DATA.filter(row => {
+      if (!unitFilter(row)) return false
       // Apply dropdown filters
       for (const { key } of FILTER_DEFS) {
         if (filters[key] && String(row[key]) !== filters[key]) return false
@@ -91,7 +100,8 @@ export default function MechanicalSeals() {
       }
       return true
     })
-  }, [filters, search])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, search, unitSystem])
 
   const activeCount = Object.values(filters).filter(Boolean).length
 
@@ -103,19 +113,6 @@ export default function MechanicalSeals() {
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray mb-2">Product Line</p>
             <h2 className="text-2xl font-bold text-brand-black tracking-tight">Mechanical Seals</h2>
-            <p className="text-sm text-cool-gray mt-1.5 max-w-lg">
-              Split seal price list — 442, 442C, and 442HP models.
-            </p>
-          </div>
-          <div className="hidden xl:flex flex-col gap-1.5 shrink-0 text-right">
-            <div className="flex items-center gap-2 justify-end">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">API 682</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
-            </div>
-            <div className="flex items-center gap-2 justify-end">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-cool-gray">ISO 21049</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
-            </div>
           </div>
         </div>
       </div>
