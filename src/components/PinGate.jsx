@@ -70,12 +70,12 @@ export default function PinGate({ correctPin, onAuthenticated, exiting }) {
           <div
             className="w-[72px] h-[72px] rounded-[20px] flex items-center justify-center overflow-hidden"
             style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#ffffff',
+              border: '1px solid rgba(255,255,255,0.2)',
               boxShadow: '0 0 0 1px rgba(200,16,46,0.2), 0 8px 32px rgba(0,0,0,0.4)',
             }}
           >
-            <img src="/logo.png" alt="Chesterton" className="w-12 h-12 object-contain mix-blend-multiply" />
+            <img src="/logo.png" alt="Chesterton" className="w-12 h-12 object-contain" />
           </div>
           <div className="text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] mb-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
