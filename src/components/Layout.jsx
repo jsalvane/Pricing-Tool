@@ -3,6 +3,11 @@ import Header from './Header.jsx'
 import Sidebar, { SECTIONS } from './Sidebar.jsx'
 import SummaryPanel from './SummaryPanel.jsx'
 import ComingSoon from './ComingSoon.jsx'
+import MechanicalSeals from './sections/MechanicalSeals.jsx'
+
+const SECTION_COMPONENTS = {
+  'mechanical-seals': MechanicalSeals,
+}
 
 export default function Layout({ activeSection, onSectionChange, onLogout }) {
   const [renderKey, setRenderKey] = useState(0)
@@ -45,7 +50,12 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
           </div>
 
           <div className="px-6 py-6 pb-10">
-            <ComingSoon key={`${activeSection}-${renderKey}`} title={currentSection?.label ?? ''} />
+            {(() => {
+              const SectionComponent = SECTION_COMPONENTS[activeSection]
+              return SectionComponent
+                ? <SectionComponent key={`${activeSection}-${renderKey}`} />
+                : <ComingSoon key={`${activeSection}-${renderKey}`} title={currentSection?.label ?? ''} />
+            })()}
           </div>
         </main>
 
