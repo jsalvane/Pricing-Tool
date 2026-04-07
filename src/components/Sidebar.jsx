@@ -17,9 +17,9 @@ const SECTIONS = [
     shortLabel: 'Packing',
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path strokeLinecap="round" d="M3 8c1.5,-2 3,-2 4.5,0c1.5,2 3,2 4.5,0c1.5,-2 3,-2 4.5,0c1.5,2 3,2 4.5,0" />
-        <path strokeLinecap="round" d="M3 12c1.5,-2 3,-2 4.5,0c1.5,2 3,2 4.5,0c1.5,-2 3,-2 4.5,0c1.5,2 3,2 4.5,0" />
-        <path strokeLinecap="round" d="M3 16c1.5,-2 3,-2 4.5,0c1.5,2 3,2 4.5,0c1.5,-2 3,-2 4.5,0c1.5,2 3,2 4.5,0" />
+        <ellipse cx="12" cy="6.5" rx="8" ry="2.5" />
+        <ellipse cx="12" cy="12" rx="8" ry="2.5" />
+        <ellipse cx="12" cy="17.5" rx="8" ry="2.5" />
       </svg>
     ),
   },
@@ -29,8 +29,8 @@ const SECTIONS = [
     shortLabel: 'Polymer',
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8.5 4.75v9.5L12 22l-8.5-4.75v-9.5L12 3z" />
-        <circle cx="12" cy="12" r="3" />
+        {/* Lip seal cross-section: outer casing pillars + inner U-cup lip */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 3v18M20 3v18M4 3h5M15 3h5M4 21h5M15 21h5M9 3v9a3 3 0 006 0V3" />
       </svg>
     ),
   },
@@ -50,7 +50,12 @@ const SECTIONS = [
     shortLabel: 'IL/MRO',
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75a4.5 4.5 0 01-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 11-3.586-3.586l8.684-7.152c.833-.736.995-1.874.904-2.95a4.5 4.5 0 016.336-4.486l-3.276 3.276a3.004 3.004 0 002.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852z" />
+        {/* Spray can: body, dome shoulder, neck, actuator, spray lines */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 22h8M7 10h8v12H7V10z" />
+        <path strokeLinecap="round" d="M7 10c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5" />
+        <path strokeLinecap="round" d="M11 6.5V4.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 4.5h2.5v3H13" />
+        <path strokeLinecap="round" d="M15.5 4l2-1.5M15.5 6h2M15.5 8l2 1.5" />
       </svg>
     ),
   },
