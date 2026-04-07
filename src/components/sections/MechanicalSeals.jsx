@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { SEAL_DATA } from '../../data/sealData'
 
 const TYPE_LABELS = {
@@ -30,11 +30,133 @@ function sortedSizes(vals) {
 const ALL_UNITS = ['inch', 'metric']
 const ALL_TYPES = ['SA', 'SPK']
 
+const emptyFilters = () => ({ model: new Set(), size: new Set(), face: new Set(), elastomer: new Set() })
+
+function MultiSelect({ label, options, selected, onChange, optionLabel }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handleClick = e => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  const allSelected = selected.size === 0
+  const count = selected.size
+  const buttonLabel = allSelected ? 'All' : count === 1 ? optionLabel([...selected][0]) : `${count} selected`
+  const isActive = !allSelected
+
+  const toggle = val => {
+    const next = new Set(selected)
+    next.has(val) ? next.delete(val) : next.add(val)
+    onChange(next)
+  }
+
+  return (
+    <div ref={ref} className="flex flex-col gap-1.5 relative" style={{ minWidth: '110px' }}>
+      <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>{label}</label>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="text-[13px] px-3 py-2 rounded-[10px] focus:outline-none transition-all text-left flex items-center justify-between gap-2"
+        style={{
+          background: isActive ? 'rgba(200,16,46,0.05)' : 'rgba(0,0,0,0.04)',
+          border: isActive ? '1px solid rgba(200,16,46,0.3)' : '1px solid rgba(0,0,0,0.08)',
+          color: isActive ? '#1c1c1e' : '#6e6e73',
+          fontWeight: isActive ? 500 : 400,
+        }}
+      >
+        <span className="truncate">{buttonLabel}</span>
+        <svg
+          className="w-3 h-3 flex-shrink-0"
+          style={{ opacity: 0.45, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full left-0 mt-1 rounded-[12px] z-50"
+          style={{
+            background: 'white',
+            border: '1px solid rgba(0,0,0,0.1)',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.13)',
+            minWidth: '100%',
+            maxHeight: '220px',
+            overflowY: 'auto',
+          }}
+        >
+          {/* All row */}
+          <button
+            onClick={() => onChange(new Set())}
+            className="w-full text-left px-3 py-2 text-[12px] flex items-center gap-2.5 transition-colors"
+            style={{
+              borderBottom: '1px solid rgba(0,0,0,0.06)',
+              fontWeight: allSelected ? 600 : 400,
+              color: allSelected ? '#c8102e' : '#1c1c1e',
+              background: allSelected ? 'rgba(200,16,46,0.03)' : 'transparent',
+            }}
+            onMouseEnter={e => { if (!allSelected) e.currentTarget.style.background = 'rgba(0,0,0,0.03)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = allSelected ? 'rgba(200,16,46,0.03)' : 'transparent' }}
+          >
+            <Checkbox checked={allSelected} />
+            All
+          </button>
+
+          {options.map(v => {
+            const checked = selected.has(v)
+            return (
+              <button
+                key={v}
+                onClick={() => toggle(v)}
+                className="w-full text-left px-3 py-2 text-[12px] flex items-center gap-2.5 transition-colors"
+                style={{
+                  color: checked ? '#c8102e' : '#1c1c1e',
+                  fontWeight: checked ? 500 : 400,
+                  background: checked ? 'rgba(200,16,46,0.03)' : 'transparent',
+                }}
+                onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'rgba(0,0,0,0.03)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = checked ? 'rgba(200,16,46,0.03)' : 'transparent' }}
+              >
+                <Checkbox checked={checked} />
+                {optionLabel(v)}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Checkbox({ checked }) {
+  return (
+    <span
+      className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0"
+      style={{
+        border: checked ? 'none' : '1.5px solid rgba(0,0,0,0.22)',
+        background: checked ? '#c8102e' : 'transparent',
+      }}
+    >
+      {checked && (
+        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      )}
+    </span>
+  )
+}
+
 export default function MechanicalSeals({ onAddToQuote }) {
   const [search, setSearch]           = useState('')
   const [activeUnits, setActiveUnits] = useState(new Set(['inch', 'metric']))
   const [activeTypes, setActiveTypes] = useState(new Set(['SA', 'SPK']))
-  const [filters, setFilters]         = useState({ model: '', size: '', face: '', elastomer: '' })
+  const [filters, setFilters]         = useState(emptyFilters())
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(25)
 
@@ -45,7 +167,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
       if (prev.size === 1 && prev.has(unit)) return prev
       const next = new Set(prev)
       next.has(unit) ? next.delete(unit) : next.add(unit)
-      setFilters(f => ({ ...f, size: '' }))
+      setFilters(f => ({ ...f, size: new Set() }))
       return next
     })
     resetPage()
@@ -74,8 +196,8 @@ export default function MechanicalSeals({ onAddToQuote }) {
         if (!activeTypes.has(row.type)) return false
         return FILTER_DEFS.every(f => {
           if (f.key === key) return true
-          if (!filters[f.key]) return true
-          return String(row[f.key]) === filters[f.key]
+          if (filters[f.key].size === 0) return true
+          return filters[f.key].has(String(row[f.key]))
         })
       })
       const vals = [...new Set(subset.map(r => String(r[key])))]
@@ -93,7 +215,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
       if (!unitFilter(row)) return false
       if (!activeTypes.has(row.type)) return false
       for (const { key } of FILTER_DEFS) {
-        if (filters[key] && String(row[key]) !== filters[key]) return false
+        if (filters[key].size > 0 && !filters[key].has(String(row[key]))) return false
       }
       if (q) {
         const haystack = `${row.itemNumber} ${row.description}`.toLowerCase()
@@ -114,11 +236,11 @@ export default function MechanicalSeals({ onAddToQuote }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, search, activeUnits, activeTypes])
 
-  const isFiltered = Object.values(filters).some(Boolean) || search ||
+  const isFiltered = Object.values(filters).some(s => s.size > 0) || search ||
     activeUnits.size < 2 || activeTypes.size < 2
 
   const clearAll = () => {
-    setFilters({ model: '', size: '', face: '', elastomer: '' })
+    setFilters(emptyFilters())
     setSearch('')
     setActiveUnits(new Set(['inch', 'metric']))
     setActiveTypes(new Set(['SA', 'SPK']))
@@ -220,29 +342,17 @@ export default function MechanicalSeals({ onAddToQuote }) {
 
         <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }} />
 
-        {/* Row 2: Dropdown filters */}
+        {/* Row 2: Multi-select filters */}
         <div className="flex flex-wrap gap-3 items-end">
           {FILTER_DEFS.map(({ key, label, optionLabel }) => (
-            <div key={key} className="flex flex-col gap-1.5 min-w-[110px]">
-              <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>{label}</label>
-              <select
-                value={filters[key]}
-                onChange={e => setFilter(key, e.target.value)}
-                className="text-[13px] px-3 py-2 rounded-[10px] focus:outline-none focus:ring-2 transition-all cursor-pointer appearance-none"
-                style={{
-                  background: filters[key] ? 'rgba(200,16,46,0.05)' : 'rgba(0,0,0,0.04)',
-                  border: filters[key] ? '1px solid rgba(200,16,46,0.3)' : '1px solid rgba(0,0,0,0.08)',
-                  color: filters[key] ? '#1c1c1e' : '#6e6e73',
-                  fontWeight: filters[key] ? 500 : 400,
-                  minWidth: '110px',
-                }}
-              >
-                <option value="">All</option>
-                {optionsFor[key]?.map(v => (
-                  <option key={v} value={v}>{optionLabel(v)}</option>
-                ))}
-              </select>
-            </div>
+            <MultiSelect
+              key={key}
+              label={label}
+              options={optionsFor[key] ?? []}
+              selected={filters[key]}
+              onChange={val => setFilter(key, val)}
+              optionLabel={optionLabel}
+            />
           ))}
         </div>
 
