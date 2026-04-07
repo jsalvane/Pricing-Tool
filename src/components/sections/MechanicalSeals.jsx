@@ -157,7 +157,7 @@ function Checkbox({ checked }) {
 
 // ── Export helpers ──────────────────────────────────────────────────────────
 
-const EXPORT_HEADERS = ['Item Number', 'Model', 'Description', 'Type', 'Size', 'Face', 'Elastomer', 'List Price']
+const EXPORT_HEADERS = ['Item Number', 'Model', 'Description', 'Type', 'Size', 'Face', 'Elastomer', 'List Price', 'Lead Time (days)']
 
 function rowToArr(row) {
   return [
@@ -169,6 +169,7 @@ function rowToArr(row) {
     row.face,
     row.elastomer,
     row.listPrice,
+    row.leadTime ?? '',
   ]
 }
 
@@ -192,7 +193,7 @@ function makeSheet(rows) {
     if (cell) cell.s = { font: { bold: true } }
   }
   // Column widths
-  ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 42 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }]
+  ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 42 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 16 }]
   return ws
 }
 
@@ -660,13 +661,14 @@ export default function MechanicalSeals({ onAddToQuote }) {
                 <th className="text-left py-3 px-4 font-semibold uppercase w-[90px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Model</th>
                 <th className="text-left py-3 px-4 font-semibold uppercase" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Description</th>
                 <th className="text-right py-3 px-5 font-semibold uppercase w-[110px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>List Price</th>
+                <th className="text-right py-3 px-4 font-semibold uppercase w-[110px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Lead Time</th>
                 <th className="w-[52px]" />
               </tr>
             </thead>
             <tbody>
               {visibleRows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
+                  <td colSpan={6} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
                     No items match the selected filters.
                   </td>
                 </tr>
@@ -700,9 +702,12 @@ export default function MechanicalSeals({ onAddToQuote }) {
                     <td className="py-3 px-5 text-right text-[13px] font-semibold tabular-nums whitespace-nowrap" style={{ color: '#1c1c1e' }}>
                       {formatPrice(row.listPrice)}
                     </td>
+                    <td className="py-3 px-4 text-right text-[13px] tabular-nums whitespace-nowrap" style={{ color: '#6e6e73' }}>
+                      {row.leadTime != null ? `${row.leadTime}d` : '—'}
+                    </td>
                     <td className="py-3 px-3">
                       <button
-                        onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice })}
+                        onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime })}
                         className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
                         style={{ background: '#c8102e', color: 'white' }}
                         title="Add to quote"

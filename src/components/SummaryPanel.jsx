@@ -83,6 +83,9 @@ export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQt
                       {item.code && (
                         <p className="text-[10px] font-mono mt-0.5" style={{ color: '#aeaeb2' }}>{item.code}</p>
                       )}
+                      {item.leadTime != null && (
+                        <p className="text-[10px] mt-0.5" style={{ color: '#aeaeb2' }}>Lead time: {item.leadTime}d</p>
+                      )}
                     </div>
                     <p className="text-[12px] font-semibold tabular-nums shrink-0" style={{ color: '#1c1c1e' }}>
                       ${((item.price || 0) * (item.qty || 1)).toFixed(2)}
