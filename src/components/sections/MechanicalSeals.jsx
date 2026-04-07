@@ -36,6 +36,10 @@ export default function MechanicalSeals({ onAddToQuote }) {
   const [activeUnits, setActiveUnits] = useState(new Set(['inch', 'metric']))
   const [activeTypes, setActiveTypes] = useState(new Set(['SA', 'SPK']))
   const [filters, setFilters]         = useState({ model: '', size: '', face: '', elastomer: '' })
+  const [page, setPage]               = useState(1)
+  const [pageSize, setPageSize]       = useState(25)
+
+  const resetPage = () => setPage(1)
 
   const toggleUnit = unit => {
     setActiveUnits(prev => {
@@ -45,6 +49,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
       setFilters(f => ({ ...f, size: '' }))
       return next
     })
+    resetPage()
   }
 
   const toggleType = type => {
@@ -54,6 +59,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
       next.has(type) ? next.delete(type) : next.add(type)
       return next
     })
+    resetPage()
   }
 
   const unitFilter = row => {
@@ -80,7 +86,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, activeUnits, activeTypes])
 
-  const setFilter = (key, val) => setFilters(prev => ({ ...prev, [key]: val }))
+  const setFilter = (key, val) => { setFilters(prev => ({ ...prev, [key]: val })); resetPage() }
 
   const visibleRows = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -117,7 +123,12 @@ export default function MechanicalSeals({ onAddToQuote }) {
     setSearch('')
     setActiveUnits(new Set(['inch', 'metric']))
     setActiveTypes(new Set(['SA', 'SPK']))
+    resetPage()
   }
+
+  const totalPages = Math.max(1, Math.ceil(visibleRows.length / pageSize))
+  const clampedPage = Math.min(page, totalPages)
+  const pagedRows = visibleRows.slice((clampedPage - 1) * pageSize, clampedPage * pageSize)
 
   return (
     <div className="step-enter">

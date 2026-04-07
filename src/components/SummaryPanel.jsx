@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-export default function SummaryPanel({ activeSection, lineItems = [], onRemoveItem }) {
+export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQty }) {
   const [open, setOpen] = useState(true)
-  const total = lineItems.reduce((sum, item) => sum + (item.price || 0), 0)
+  const total = lineItems.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0)
 
   return (
     <div className="hidden lg:flex shrink-0 print:hidden relative">
@@ -56,25 +56,38 @@ export default function SummaryPanel({ activeSection, lineItems = [], onRemoveIt
               {lineItems.map((item, i) => (
                 <div
                   key={i}
-                  className="w-full flex items-center justify-between py-1.5 px-2.5 rounded text-left transition-all hover:bg-gray-50 group"
+                  className="w-full py-2 px-2.5 rounded transition-all hover:bg-gray-50"
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold text-brand-black truncate">{item.name}</p>
-                    {item.code && (
-                      <p className="text-[10px] font-mono text-cool-gray mt-0.5">{item.code}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 ml-2 shrink-0">
-                    <p className="text-[11px] font-semibold text-brand-black tabular-nums">
-                      ${item.price?.toFixed(2)}
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold text-brand-black truncate leading-tight">{item.name}</p>
+                      {item.code && (
+                        <p className="text-[10px] font-mono text-cool-gray mt-0.5">{item.code}</p>
+                      )}
+                    </div>
+                    <p className="text-[11px] font-semibold text-brand-black tabular-nums shrink-0">
+                      ${((item.price || 0) * (item.qty || 1)).toFixed(2)}
                     </p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => onRemoveItem?.(i)}
-                      className="opacity-0 group-hover:opacity-100 w-4 h-4 flex items-center justify-center rounded-full text-cool-gray hover:text-brand-accent hover:bg-gray-100 transition-all"
-                      title="Remove"
+                      onClick={() => onUpdateQty?.(i, -1)}
+                      className="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-cool-gray hover:border-brand-accent hover:text-brand-accent transition-colors"
+                      title={item.qty === 1 ? 'Remove' : 'Decrease quantity'}
+                    >
+                      {item.qty === 1
+                        ? <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        : <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" /></svg>
+                      }
+                    </button>
+                    <span className="text-[11px] font-semibold text-brand-black tabular-nums w-5 text-center">{item.qty}</span>
+                    <button
+                      onClick={() => onUpdateQty?.(i, 1)}
+                      className="w-5 h-5 flex items-center justify-center rounded border border-gray-200 text-cool-gray hover:border-brand-accent hover:text-brand-accent transition-colors"
+                      title="Increase quantity"
                     >
                       <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
                   </div>

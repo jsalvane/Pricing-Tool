@@ -15,7 +15,20 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
   const prevSection = useRef(activeSection)
 
   const handleAddToQuote = (item) => {
-    setLineItems(prev => [...prev, item])
+    setLineItems(prev => {
+      const existing = prev.findIndex(i => i.code === item.code)
+      if (existing !== -1) {
+        return prev.map((i, idx) => idx === existing ? { ...i, qty: i.qty + 1 } : i)
+      }
+      return [...prev, { ...item, qty: 1 }]
+    })
+  }
+
+  const handleUpdateQty = (idx, delta) => {
+    setLineItems(prev => {
+      const next = prev.map((item, i) => i === idx ? { ...item, qty: item.qty + delta } : item)
+      return next.filter(item => item.qty > 0)
+    })
   }
 
   // Re-mount section component on change to retrigger animations
@@ -64,7 +77,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
           </div>
         </main>
 
-        <SummaryPanel activeSection={activeSection} lineItems={lineItems} onRemoveItem={i => setLineItems(prev => prev.filter((_, idx) => idx !== i))} />
+        <SummaryPanel activeSection={activeSection} lineItems={lineItems} onUpdateQty={handleUpdateQty} />
       </div>
 
       {/* Mobile bottom bar — summary CTA */}
