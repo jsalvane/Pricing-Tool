@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.env.local
+.env*.local
+*.log
+.DS_Store
+Thumbs.db
+.claude
+EN22641_602172_Corporate_Guide_AWC.pdf
+UI-DESIGN-SYSTEM.md
