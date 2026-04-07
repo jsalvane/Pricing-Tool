@@ -228,12 +228,12 @@ export default function MechanicalSeals({ onAddToQuote }) {
           <input
             type="text"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); resetPage() }}
             placeholder="Search item number or description — use * as wildcard (e.g. 442*RSC/CB*EP)"
             className="w-full text-xs pl-8 pr-8 py-2 rounded border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-colors placeholder:text-gray-300"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black">
+            <button onClick={() => { setSearch(''); resetPage() }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-black">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -284,7 +284,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
                   </td>
                 </tr>
               ) : (
-                visibleRows.slice(0, 500).map((row, i) => (
+                pagedRows.map((row, i) => (
                   <tr key={`${row.itemNumber}-${i}`} className="hover:bg-brand-accent-light/40 transition-colors">
                     <td className="py-2 px-4 font-mono text-[11px] text-brand-black whitespace-nowrap">{row.itemNumber}</td>
                     <td className="py-2 px-4 text-brand-black">
@@ -313,9 +313,34 @@ export default function MechanicalSeals({ onAddToQuote }) {
             </tbody>
           </table>
         </div>
-        {visibleRows.length > 500 && (
-          <div className="border-t border-gray-100 px-4 py-2.5 text-[11px] text-cool-gray bg-gray-50 text-center">
-            Showing first 500 of {visibleRows.length.toLocaleString()} results — use filters or search to narrow down.
+        {/* Pagination footer */}
+        {totalPages > 1 && (
+          <div className="border-t border-gray-100 px-4 py-2.5 bg-gray-50 flex items-center justify-between">
+            <span className="text-[11px] text-cool-gray">
+              Page {clampedPage} of {totalPages} &mdash; {((clampedPage - 1) * pageSize + 1).toLocaleString()}–{Math.min(clampedPage * pageSize, visibleRows.length).toLocaleString()} of {visibleRows.length.toLocaleString()}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(1)}
+                disabled={clampedPage === 1}
+                className="px-2 py-1 text-[11px] rounded border border-gray-200 text-cool-gray disabled:opacity-30 hover:enabled:border-brand-accent hover:enabled:text-brand-black transition-colors focus:outline-none"
+              >«</button>
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={clampedPage === 1}
+                className="px-2 py-1 text-[11px] rounded border border-gray-200 text-cool-gray disabled:opacity-30 hover:enabled:border-brand-accent hover:enabled:text-brand-black transition-colors focus:outline-none"
+              >‹</button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={clampedPage === totalPages}
+                className="px-2 py-1 text-[11px] rounded border border-gray-200 text-cool-gray disabled:opacity-30 hover:enabled:border-brand-accent hover:enabled:text-brand-black transition-colors focus:outline-none"
+              >›</button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={clampedPage === totalPages}
+                className="px-2 py-1 text-[11px] rounded border border-gray-200 text-cool-gray disabled:opacity-30 hover:enabled:border-brand-accent hover:enabled:text-brand-black transition-colors focus:outline-none"
+              >»</button>
+            </div>
           </div>
         )}
       </div>
