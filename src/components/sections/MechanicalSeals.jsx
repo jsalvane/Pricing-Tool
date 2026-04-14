@@ -437,7 +437,15 @@ function ComparisonMatrix({ rows, onAddToQuote }) {
       }
       byModel[model] = { sizes, lookup }
     }
-    return { models, combos, byModel }
+    // Group models by seal type
+    const typeGroupMap = new Map()
+    for (const model of models) {
+      const st = sealTypeOf(model)
+      if (!typeGroupMap.has(st)) typeGroupMap.set(st, [])
+      typeGroupMap.get(st).push(model)
+    }
+    const typeGroups = [...typeGroupMap.entries()].map(([sealType, ms]) => ({ sealType, models: ms }))
+    return { models, combos, byModel, typeGroups }
   }, [rows])
 
   if (matrix.models.length === 0) {
@@ -471,62 +479,81 @@ function ComparisonMatrix({ rows, onAddToQuote }) {
           </tr>
         </thead>
         <tbody>
-          {matrix.models.map(model => (
-            <React.Fragment key={model}>
-              {/* Model header row */}
+          {matrix.typeGroups.map(({ sealType, models: groupModels }) => (
+            <React.Fragment key={sealType}>
+              {/* Seal Type super-header row */}
               <tr>
                 <td
                   colSpan={matrix.combos.length + 1}
-                  className="py-2.5 px-4 sticky left-0 z-10"
-                  style={{ background: 'rgba(200,16,46,0.05)', borderTop: '2px solid rgba(200,16,46,0.15)' }}
+                  className="py-2 px-4 sticky left-0 z-10"
+                  style={{ background: 'rgba(0,0,0,0.03)', borderTop: '2px solid rgba(0,0,0,0.08)' }}
                 >
                   <span
-                    className="text-[11px] font-bold uppercase tracking-wide"
-                    style={{ color: '#c8102e' }}
+                    className="text-[10px] font-bold uppercase tracking-widest"
+                    style={{ color: '#6e6e73' }}
                   >
-                    {model}
+                    {sealType}
                   </span>
                 </td>
               </tr>
-              {/* Size rows for this model */}
-              {matrix.byModel[model].sizes.map((size, si) => (
-                <tr
-                  key={`${model}-${size}`}
-                  style={{ borderTop: si === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
-                >
-                  <td
-                    className="py-2.5 px-4 text-[12px] font-semibold sticky left-0 z-10"
-                    style={{ color: '#1c1c1e', background: 'rgba(248,248,250,1)' }}
-                  >
-                    {formatSize(size)}
-                  </td>
-                  {matrix.combos.map(combo => {
-                    const row = matrix.byModel[model].lookup[`${size}|${combo}`]
-                    if (!row) return <td key={combo} className="py-2.5 px-3 text-center text-[11px]" style={{ color: '#aeaeb2' }}>—</td>
-                    return (
-                      <td key={combo} className="py-2.5 px-3 text-center">
-                        <button
-                          onClick={(e) => {
-                            const cp = counterpartMap.get(`${row.model}|${row.size}|${row.face}|${row.elastomer}|${row.type === 'SA' ? 'SPK' : 'SA'}`)
-                            onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime, type: row.type, counterpart: cp ? { name: cp.description, code: cp.itemNumber, price: cp.listPrice, leadTime: cp.leadTime, type: cp.type } : undefined }, e.currentTarget.getBoundingClientRect())
-                          }}
-                          className="inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all group"
-                          style={{ background: 'transparent' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(200,16,46,0.05)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                          title={`${row.description} — Click to add to quote`}
-                        >
-                          <span className="text-[13px] font-semibold tabular-nums" style={{ color: '#1c1c1e' }}>
-                            {formatPrice(row.listPrice)}
-                          </span>
-                          <span className="text-[9px] font-mono" style={{ color: '#aeaeb2' }}>
-                            {row.itemNumber}
-                          </span>
-                        </button>
+              {groupModels.map(model => (
+                <React.Fragment key={model}>
+                  {/* Model header row */}
+                  <tr>
+                    <td
+                      colSpan={matrix.combos.length + 1}
+                      className="py-2.5 px-4 sticky left-0 z-10"
+                      style={{ background: 'rgba(200,16,46,0.05)', borderTop: '1px solid rgba(200,16,46,0.15)' }}
+                    >
+                      <span
+                        className="text-[11px] font-bold uppercase tracking-wide"
+                        style={{ color: '#c8102e' }}
+                      >
+                        {model}
+                      </span>
+                    </td>
+                  </tr>
+                  {/* Size rows for this model */}
+                  {matrix.byModel[model].sizes.map((size, si) => (
+                    <tr
+                      key={`${model}-${size}`}
+                      style={{ borderTop: si === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
+                    >
+                      <td
+                        className="py-2.5 px-4 text-[12px] font-semibold sticky left-0 z-10"
+                        style={{ color: '#1c1c1e', background: 'rgba(248,248,250,1)' }}
+                      >
+                        {formatSize(size)}
                       </td>
-                    )
-                  })}
-                </tr>
+                      {matrix.combos.map(combo => {
+                        const row = matrix.byModel[model].lookup[`${size}|${combo}`]
+                        if (!row) return <td key={combo} className="py-2.5 px-3 text-center text-[11px]" style={{ color: '#aeaeb2' }}>—</td>
+                        return (
+                          <td key={combo} className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={(e) => {
+                                const cp = counterpartMap.get(`${row.model}|${row.size}|${row.face}|${row.elastomer}|${row.type === 'SA' ? 'SPK' : 'SA'}`)
+                                onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime, type: row.type, counterpart: cp ? { name: cp.description, code: cp.itemNumber, price: cp.listPrice, leadTime: cp.leadTime, type: cp.type } : undefined }, e.currentTarget.getBoundingClientRect())
+                              }}
+                              className="inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all group"
+                              style={{ background: 'transparent' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(200,16,46,0.05)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              title={`${row.description} — Click to add to quote`}
+                            >
+                              <span className="text-[13px] font-semibold tabular-nums" style={{ color: '#1c1c1e' }}>
+                                {formatPrice(row.listPrice)}
+                              </span>
+                              <span className="text-[9px] font-mono" style={{ color: '#aeaeb2' }}>
+                                {row.itemNumber}
+                              </span>
+                            </button>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </React.Fragment>
               ))}
             </React.Fragment>
           ))}
