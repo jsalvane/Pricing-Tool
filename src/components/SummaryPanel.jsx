@@ -178,7 +178,7 @@ export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQt
 
         {/* Line items */}
         <div className="flex-1 overflow-y-auto px-3 py-3" style={{ background: 'white' }}>
-          {renderItems(lineItems, onUpdateQty, onUpdateNote)}
+          {renderItems(lineItems, onUpdateQty, onUpdateNote, onAddToQuote)}
         </div>
 
         {/* Totals */}
