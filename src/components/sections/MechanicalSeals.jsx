@@ -91,7 +91,7 @@ function loadFilters() {
 
 // ── MultiSelect ──────────────────────────────────────────────────────────
 
-function MultiSelect({ label, options, selected, onChange, optionLabel }) {
+function MultiSelect({ label, options, selected, onChange, optionLabel, variant = 'default' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -115,28 +115,43 @@ function MultiSelect({ label, options, selected, onChange, optionLabel }) {
     onChange(next)
   }
 
-  return (
-    <div ref={ref} className="flex flex-col gap-1.5 relative" style={{ minWidth: '110px' }}>
-      <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>{label}</label>
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="text-[13px] px-3 py-2 rounded-[10px] focus:outline-none transition-all text-left flex items-center justify-between gap-2"
-        style={{
-          background: isActive ? 'rgba(200,16,46,0.05)' : 'rgba(0,0,0,0.04)',
-          border: isActive ? '1px solid rgba(200,16,46,0.3)' : '1px solid rgba(0,0,0,0.08)',
-          color: isActive ? '#1c1c1e' : '#6e6e73',
-          fontWeight: isActive ? 500 : 400,
-        }}
+  const isControl = variant === 'control'
+
+  const triggerBtn = (
+    <button
+      onClick={() => setOpen(o => !o)}
+      className={`focus:outline-none transition-all flex items-center gap-2 ${isControl ? 'px-3 py-1.5 rounded-[8px] text-[12px] font-medium' : 'text-[13px] px-3 py-2 rounded-[10px] text-left justify-between'}`}
+      style={isControl ? {
+        background: isActive ? '#c8102e' : 'transparent',
+        color: isActive ? 'white' : '#6e6e73',
+        boxShadow: isActive ? '0 1px 4px rgba(200,16,46,0.3)' : 'none',
+        fontWeight: 500,
+      } : {
+        background: isActive ? 'rgba(200,16,46,0.05)' : 'rgba(0,0,0,0.04)',
+        border: isActive ? '1px solid rgba(200,16,46,0.3)' : '1px solid rgba(0,0,0,0.08)',
+        color: isActive ? '#1c1c1e' : '#6e6e73',
+        fontWeight: isActive ? 500 : 400,
+      }}
+    >
+      <span className="truncate">{buttonLabel}</span>
+      <svg
+        className="w-3 h-3 flex-shrink-0"
+        style={{ opacity: isControl ? (isActive ? 0.7 : 0.45) : 0.45, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
       >
-        <span className="truncate">{buttonLabel}</span>
-        <svg
-          className="w-3 h-3 flex-shrink-0"
-          style={{ opacity: 0.45, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  )
+
+  return (
+    <div ref={ref} className="flex flex-col gap-1.5 relative" style={isControl ? undefined : { minWidth: '110px' }}>
+      <label className="text-[10px] font-semibold uppercase" style={{ color: '#6e6e73', letterSpacing: '0.1em' }}>{label}</label>
+      {isControl ? (
+        <div className="flex p-0.5 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.06)' }}>
+          {triggerBtn}
+        </div>
+      ) : triggerBtn}
 
       {open && (
         <div
@@ -860,6 +875,16 @@ export default function MechanicalSeals({ onAddToQuote }) {
             </div>
           </div>
 
+          {/* Seal Type dropdown — styled to match segmented controls */}
+          <MultiSelect
+            label="Seal Type"
+            options={ALL_SEAL_TYPES}
+            selected={sealTypeFilter}
+            onChange={val => { setSealTypeFilter(val); resetPage() }}
+            optionLabel={v => v}
+            variant="control"
+          />
+
           {isFiltered && (
             <button
               onClick={clearAll}
@@ -878,13 +903,6 @@ export default function MechanicalSeals({ onAddToQuote }) {
 
         {/* Row 2: Multi-select filters */}
         <div className="flex flex-wrap gap-3 items-end">
-          <MultiSelect
-            label="Seal Type"
-            options={ALL_SEAL_TYPES}
-            selected={sealTypeFilter}
-            onChange={val => { setSealTypeFilter(val); resetPage() }}
-            optionLabel={v => v}
-          />
           {FILTER_DEFS.map(({ key, label, optionLabel }) => (
             <MultiSelect
               key={key}
