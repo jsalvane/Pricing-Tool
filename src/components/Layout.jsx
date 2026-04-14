@@ -74,7 +74,7 @@ function SectionLoader() {
   )
 }
 
-export default function Layout({ activeSection, onSectionChange, onLogout, dark, onToggleDark }) {
+export default function Layout({ activeSection, onSectionChange, onLogout }) {
   const [renderKey, setRenderKey] = useState(0)
   const [lineItems, setLineItems] = useState(loadSavedItems)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
@@ -136,7 +136,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout, dark,
   const total = lineItems.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0)
 
   return (
-    <div className="flex flex-col h-full" style={{ background: dark ? 'var(--dm-bg, #0a0a0c)' : '#f2f2f7' }}>
+    <div className="flex flex-col h-full" style={{ background: '#f2f2f7' }}>
       {/* Fly-to-quote particles */}
       {flyDots.map(dot => <FlyDot key={dot.id} {...dot} />)}
 
@@ -148,7 +148,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout, dark,
         />
       )}
 
-      <Header activeSection={activeSection} onLogout={onLogout} dark={dark} onToggleDark={onToggleDark} />
+      <Header activeSection={activeSection} onLogout={onLogout} />
 
       <div className="flex flex-1 min-h-0 max-w-[1280px] mx-auto w-full">
         <Sidebar activeSection={activeSection} onSectionChange={onSectionChange} />
@@ -198,6 +198,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout, dark,
           lineItems={lineItems}
           onUpdateQty={handleUpdateQty}
           onUpdateNote={handleUpdateNote}
+          onAddToQuote={handleAddToQuote}
           onGenerateQuote={() => setQuoteModalOpen(true)}
         />
       </div>
@@ -256,6 +257,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout, dark,
           lineItems={lineItems}
           onUpdateQty={handleUpdateQty}
           onUpdateNote={handleUpdateNote}
+          onAddToQuote={handleAddToQuote}
           onGenerateQuote={() => { setMobileDrawerOpen(false); setQuoteModalOpen(true) }}
           onClose={() => setMobileDrawerOpen(false)}
         />

@@ -1,13 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import PinGate from './components/PinGate.jsx'
 import Layout from './components/Layout.jsx'
-import { useDarkMode } from './hooks/useDarkMode.js'
 
 const SESSION_KEY = 'chesterton_auth'
 const CORRECT_PIN = '1884'
 
 export default function App() {
-  const [dark, setDark] = useDarkMode()
   const [authenticated, setAuthenticated] = useState(() => {
     return sessionStorage.getItem(SESSION_KEY) === 'true'
   })
@@ -44,8 +42,6 @@ export default function App() {
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         onLogout={handleLogout}
-        dark={dark}
-        onToggleDark={() => setDark(d => !d)}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function Header({ activeSection, onLogout, dark, onToggleDark }) {
+export default function Header({ activeSection, onLogout }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showPricing, setShowPricing] = useState(true)
 
@@ -117,23 +117,6 @@ export default function Header({ activeSection, onLogout, dark, onToggleDark }) 
                     <span
                       className="inline-block h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 mt-[2px]"
                       style={{ transform: showPricing ? 'translateX(18px)' : 'translateX(2px)', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}
-                    />
-                  </div>
-                </button>
-                {/* Dark mode toggle */}
-                <button
-                  onClick={onToggleDark}
-                  className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors"
-                  style={{ fontSize: '13px', color: '#1c1c1e' }}
-                >
-                  <span>Dark Mode</span>
-                  <div
-                    className="relative inline-flex h-[22px] w-[38px] shrink-0 rounded-full transition-colors duration-200"
-                    style={{ background: dark ? '#c8102e' : 'rgba(0,0,0,0.15)' }}
-                  >
-                    <span
-                      className="inline-block h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 mt-[2px]"
-                      style={{ transform: dark ? 'translateX(18px)' : 'translateX(2px)', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}
                     />
                   </div>
                 </button>

@@ -495,7 +495,10 @@ function ComparisonMatrix({ rows, onAddToQuote }) {
                     return (
                       <td key={combo} className="py-2.5 px-3 text-center">
                         <button
-                          onClick={(e) => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime }, e.currentTarget.getBoundingClientRect())}
+                          onClick={(e) => {
+                            const cp = counterpartMap.get(`${row.model}|${row.size}|${row.face}|${row.elastomer}|${row.type === 'SA' ? 'SPK' : 'SA'}`)
+                            onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime, type: row.type, counterpart: cp ? { name: cp.description, code: cp.itemNumber, price: cp.listPrice, leadTime: cp.leadTime, type: cp.type } : undefined }, e.currentTarget.getBoundingClientRect())
+                          }}
                           className="inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all group"
                           style={{ background: 'transparent' }}
                           onMouseEnter={e => e.currentTarget.style.background = 'rgba(200,16,46,0.05)'}
@@ -723,7 +726,11 @@ export default function MechanicalSeals({ onAddToQuote }) {
     let first = true
     for (const row of sortedRows) {
       if (selectedRows.has(rowKey(row))) {
-        onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime }, first ? rect : null)
+        const cp = findCounterpart(row)
+        onAddToQuote?.({
+          name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime, type: row.type,
+          counterpart: cp ? { name: cp.description, code: cp.itemNumber, price: cp.listPrice, leadTime: cp.leadTime, type: cp.type } : undefined,
+        }, first ? rect : null)
         first = false
       }
     }
@@ -1082,28 +1089,19 @@ export default function MechanicalSeals({ onAddToQuote }) {
                             {row.leadTime != null ? `${row.leadTime}d` : '—'}
                           </td>
                           <td className="py-3 px-3">
-                            <div className="flex items-center gap-1.5 justify-end">
-                              {counterpart && (
-                                <button
-                                  onClick={(e) => onAddToQuote?.({ name: counterpart.description, code: counterpart.itemNumber, price: counterpart.listPrice, leadTime: counterpart.leadTime }, e.currentTarget.getBoundingClientRect())}
-                                  className="h-7 px-2 flex items-center gap-1 rounded-lg text-[9px] font-semibold transition-all active:scale-90 focus:outline-none opacity-0 group-hover:opacity-100"
-                                  style={{ background: 'rgba(200,16,46,0.08)', color: '#c8102e', border: '1px solid rgba(200,16,46,0.2)' }}
-                                  title={`Add ${row.type === 'SA' ? 'SPK' : 'SA'} counterpart: ${counterpart.itemNumber}`}
-                                >
-                                  +{row.type === 'SA' ? 'SPK' : 'SA'}
-                                </button>
-                              )}
-                              <button
-                                onClick={(e) => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime }, e.currentTarget.getBoundingClientRect())}
-                                className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
-                                style={{ background: '#c8102e', color: 'white' }}
-                                title="Add to quote"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                </svg>
-                              </button>
-                            </div>
+                            <button
+                              onClick={(e) => onAddToQuote?.({
+                                name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime, type: row.type,
+                                counterpart: counterpart ? { name: counterpart.description, code: counterpart.itemNumber, price: counterpart.listPrice, leadTime: counterpart.leadTime, type: counterpart.type } : undefined,
+                              }, e.currentTarget.getBoundingClientRect())}
+                              className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
+                              style={{ background: '#c8102e', color: 'white' }}
+                              title="Add to quote"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
                           </td>
                         </tr>
                       )
