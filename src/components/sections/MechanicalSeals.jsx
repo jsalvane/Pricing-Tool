@@ -14,6 +14,15 @@ const FILTER_DEFS = [
   { key: 'elastomer', label: 'Elastomers', optionLabel: v => v },
 ]
 
+const SEAL_TYPE_MAP = {
+  '442':   'Split Seal',
+  '442C':  'Split Seal',
+  '442HP': 'Split Seal',
+}
+const ALL_SEAL_TYPES = [...new Set(Object.values(SEAL_TYPE_MAP))].sort()
+
+function sealTypeOf(model) { return SEAL_TYPE_MAP[model] ?? 'Other' }
+
 const ALL_METALS = ['316SS']
 const ALL_UNITS = ['inch', 'metric']
 const ALL_TYPES = ['SA', 'SPK']
@@ -45,6 +54,7 @@ function saveFilters(state) {
       activeUnits: [...state.activeUnits],
       activeTypes: [...state.activeTypes],
       metalFilter: [...state.metalFilter],
+      sealTypeFilter: [...state.sealTypeFilter],
       filters: {
         model: [...state.filters.model],
         size: [...state.filters.size],
@@ -67,6 +77,7 @@ function loadFilters() {
       activeUnits: new Set(p.activeUnits || ['inch', 'metric']),
       activeTypes: new Set(p.activeTypes || ['SA', 'SPK']),
       metalFilter: new Set(p.metalFilter || []),
+      sealTypeFilter: new Set(p.sealTypeFilter || []),
       filters: {
         model: new Set(p.filters?.model || []),
         size: new Set(p.filters?.size || []),
@@ -551,11 +562,12 @@ function compareFn(key, dir) {
 export default function MechanicalSeals({ onAddToQuote }) {
   const saved = useRef(loadFilters()).current
 
-  const [search, setSearch]           = useState(saved?.search ?? '')
-  const [activeUnits, setActiveUnits] = useState(saved?.activeUnits ?? new Set(['inch', 'metric']))
-  const [activeTypes, setActiveTypes] = useState(saved?.activeTypes ?? new Set(['SA', 'SPK']))
-  const [filters, setFilters]         = useState(saved?.filters ?? emptyFilters())
-  const [metalFilter, setMetalFilter] = useState(saved?.metalFilter ?? new Set())
+  const [search, setSearch]               = useState(saved?.search ?? '')
+  const [activeUnits, setActiveUnits]     = useState(saved?.activeUnits ?? new Set(['inch', 'metric']))
+  const [activeTypes, setActiveTypes]     = useState(saved?.activeTypes ?? new Set(['SA', 'SPK']))
+  const [filters, setFilters]             = useState(saved?.filters ?? emptyFilters())
+  const [metalFilter, setMetalFilter]     = useState(saved?.metalFilter ?? new Set())
+  const [sealTypeFilter, setSealTypeFilter] = useState(saved?.sealTypeFilter ?? new Set())
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(saved?.pageSize ?? 25)
   const [sortCol, setSortCol]         = useState(null)
@@ -565,8 +577,8 @@ export default function MechanicalSeals({ onAddToQuote }) {
 
   // Persist filters on change
   useEffect(() => {
-    saveFilters({ search, activeUnits, activeTypes, metalFilter, filters, pageSize })
-  }, [search, activeUnits, activeTypes, metalFilter, filters, pageSize])
+    saveFilters({ search, activeUnits, activeTypes, metalFilter, sealTypeFilter, filters, pageSize })
+  }, [search, activeUnits, activeTypes, metalFilter, sealTypeFilter, filters, pageSize])
 
   const resetPage = () => { setPage(1); setSelectedRows(new Set()) }
 
@@ -602,6 +614,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
       const subset = SEAL_DATA.filter(row => {
         if (!unitFilter(row)) return false
         if (!activeTypes.has(row.type)) return false
+        if (sealTypeFilter.size > 0 && !sealTypeFilter.has(sealTypeOf(row.model))) return false
         return FILTER_DEFS.every(f => {
           if (f.key === key) return true
           if (filters[f.key].size === 0) return true
@@ -613,7 +626,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
     })
     return result
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, activeUnits, activeTypes])
+  }, [filters, activeUnits, activeTypes, sealTypeFilter])
 
   const setFilter = (key, val) => { setFilters(prev => ({ ...prev, [key]: val })); resetPage() }
 
@@ -622,6 +635,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
     return SEAL_DATA.filter(row => {
       if (!unitFilter(row)) return false
       if (!activeTypes.has(row.type)) return false
+      if (sealTypeFilter.size > 0 && !sealTypeFilter.has(sealTypeOf(row.model))) return false
       for (const { key } of FILTER_DEFS) {
         if (filters[key].size > 0 && !filters[key].has(String(row[key]))) return false
       }
@@ -642,7 +656,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
       return true
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, search, activeUnits, activeTypes])
+  }, [filters, search, activeUnits, activeTypes, sealTypeFilter])
 
   const sortedRows = useMemo(() => {
     if (!sortCol) return visibleRows
@@ -656,7 +670,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
   }, [visibleRows])
 
   const isFiltered = Object.values(filters).some(s => s.size > 0) || search ||
-    activeUnits.size < 2 || activeTypes.size < 2 || metalFilter.size > 0
+    activeUnits.size < 2 || activeTypes.size < 2 || metalFilter.size > 0 || sealTypeFilter.size > 0
 
   const clearAll = () => {
     setFilters(emptyFilters())
@@ -664,6 +678,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
     setActiveUnits(new Set(['inch', 'metric']))
     setActiveTypes(new Set(['SA', 'SPK']))
     setMetalFilter(new Set())
+    setSealTypeFilter(new Set())
     setSortCol(null)
     resetPage()
   }
@@ -836,6 +851,13 @@ export default function MechanicalSeals({ onAddToQuote }) {
 
         {/* Row 2: Multi-select filters */}
         <div className="flex flex-wrap gap-3 items-end">
+          <MultiSelect
+            label="Seal Type"
+            options={ALL_SEAL_TYPES}
+            selected={sealTypeFilter}
+            onChange={val => { setSealTypeFilter(val); resetPage() }}
+            optionLabel={v => v}
+          />
           {FILTER_DEFS.map(({ key, label, optionLabel }) => (
             <MultiSelect
               key={key}
