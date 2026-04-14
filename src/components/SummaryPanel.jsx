@@ -106,11 +106,13 @@ export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQt
     <div className="hidden lg:flex shrink-0 print:hidden relative">
       {/* Toggle tab */}
       <button
+        id="quote-toggle-tab"
         onClick={() => setOpen(o => !o)}
         className="absolute -left-5 top-1/2 -translate-y-1/2 z-10
                    w-5 h-12 flex items-center justify-center
                    transition-colors focus-visible:outline-none"
         style={{
+          position: 'absolute',
           background: '#1c1c1e',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRight: 'none',
@@ -119,6 +121,34 @@ export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQt
         }}
         aria-label={open ? 'Hide quote summary' : 'Show quote summary'}
       >
+        {/* Count badge — visible only when panel is collapsed */}
+        {!open && lineItems.length > 0 && (
+          <span
+            key={lineItems.length}
+            className="badge-pop"
+            style={{
+              position: 'absolute',
+              top: '-8px',
+              left: '50%',
+              background: '#c8102e',
+              color: 'white',
+              fontSize: '8px',
+              fontWeight: 700,
+              minWidth: '15px',
+              height: '15px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: 1,
+              padding: '0 3px',
+              pointerEvents: 'none',
+              border: '1.5px solid white',
+            }}
+          >
+            {lineItems.length > 99 ? '99+' : lineItems.length}
+          </span>
+        )}
         <svg
           className={`w-3 h-3 transition-transform duration-300 ${open ? 'rotate-0' : 'rotate-180'}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}

@@ -495,7 +495,7 @@ function ComparisonMatrix({ rows, onAddToQuote }) {
                     return (
                       <td key={combo} className="py-2.5 px-3 text-center">
                         <button
-                          onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime })}
+                          onClick={(e) => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime }, e.currentTarget.getBoundingClientRect())}
                           className="inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all group"
                           style={{ background: 'transparent' }}
                           onMouseEnter={e => e.currentTarget.style.background = 'rgba(200,16,46,0.05)'}
@@ -978,7 +978,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
                         </td>
                         <td className="py-3 px-3">
                           <button
-                            onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime })}
+                            onClick={(e) => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime }, e.currentTarget.getBoundingClientRect())}
                             className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
                             style={{ background: '#c8102e', color: 'white' }}
                             title="Add to quote"

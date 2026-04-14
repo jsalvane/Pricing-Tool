@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react'
 import Header from './Header.jsx'
 import Sidebar, { SECTIONS } from './Sidebar.jsx'
 import SummaryPanel from './SummaryPanel.jsx'
@@ -24,6 +24,43 @@ function loadSavedItems() {
   return []
 }
 
+// ── Fly-to-quote dot ────────────────────────────────────────────────────────
+
+function FlyDot({ startX, startY, endX, endY }) {
+  const dx = endX - startX
+  const dy = endY - startY
+  const [active, setActive] = useState(false)
+
+  useEffect(() => {
+    // Two rAF frames to ensure initial render is painted before transition starts
+    let id = requestAnimationFrame(() => {
+      id = requestAnimationFrame(() => setActive(true))
+    })
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'fixed',
+        left: startX - 5,
+        top: startY - 5,
+        width: 10,
+        height: 10,
+        borderRadius: '50%',
+        background: '#c8102e',
+        boxShadow: '0 0 0 3px rgba(200,16,46,0.18)',
+        transform: active ? `translate(${dx}px, ${dy}px) scale(0.15)` : 'translate(0,0) scale(1)',
+        opacity: active ? 0 : 1,
+        transition: 'transform 0.52s cubic-bezier(0.4,0,0.2,1), opacity 0.52s',
+        pointerEvents: 'none',
+        zIndex: 9999,
+      }}
+    />
+  )
+}
+
 function SectionLoader() {
   return (
     <div className="flex items-center justify-center py-24">
@@ -42,6 +79,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
   const [renderKey, setRenderKey] = useState(0)
   const [lineItems, setLineItems] = useState(loadSavedItems)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [flyDots, setFlyDots] = useState([])
   const prevSection = useRef(activeSection)
 
   // Persist quote to localStorage
@@ -49,7 +87,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lineItems)) } catch { /* ignore */ }
   }, [lineItems])
 
-  const handleAddToQuote = (item) => {
+  const handleAddToQuote = useCallback((item, sourceRect) => {
     setLineItems(prev => {
       const existing = prev.findIndex(i => i.code === item.code)
       if (existing !== -1) {
@@ -57,7 +95,24 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
       }
       return [...prev, { ...item, qty: 1 }]
     })
-  }
+
+    // Fly-to-quote animation
+    if (sourceRect) {
+      const dest = document.getElementById('quote-toggle-tab')
+      if (dest) {
+        const destRect = dest.getBoundingClientRect()
+        const id = `fly-${Date.now()}-${Math.random()}`
+        setFlyDots(prev => [...prev, {
+          id,
+          startX: sourceRect.left + sourceRect.width / 2,
+          startY: sourceRect.top + sourceRect.height / 2,
+          endX: destRect.left + destRect.width / 2,
+          endY: destRect.top + destRect.height / 2,
+        }])
+        setTimeout(() => setFlyDots(prev => prev.filter(d => d.id !== id)), 700)
+      }
+    }
+  }, [])
 
   const handleUpdateQty = (idx, delta) => {
     setLineItems(prev => {
@@ -83,6 +138,8 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: '#f2f2f7' }}>
+      {/* Fly-to-quote particles */}
+      {flyDots.map(dot => <FlyDot key={dot.id} {...dot} />)}
       <Header activeSection={activeSection} onLogout={onLogout} />
 
       <div className="flex flex-1 min-h-0 max-w-[1280px] mx-auto w-full">
