@@ -15,6 +15,10 @@ const FILTER_DEFS = [
 ]
 
 const ALL_METALS = ['316SS']
+const ALL_UNITS = ['inch', 'metric']
+const ALL_TYPES = ['SA', 'SPK']
+
+const STORAGE_KEY_FILTERS = 'chesterton_ms_filters'
 
 function formatSize(s) {
   const n = parseFloat(s)
@@ -30,10 +34,51 @@ function sortedSizes(vals) {
   return [...vals].sort((a, b) => parseFloat(a) - parseFloat(b))
 }
 
-const ALL_UNITS = ['inch', 'metric']
-const ALL_TYPES = ['SA', 'SPK']
-
 const emptyFilters = () => ({ model: new Set(), size: new Set(), face: new Set(), elastomer: new Set() })
+
+// ── Persistence helpers ───────────────────────────────────────────────────
+
+function saveFilters(state) {
+  try {
+    const serializable = {
+      search: state.search,
+      activeUnits: [...state.activeUnits],
+      activeTypes: [...state.activeTypes],
+      metalFilter: [...state.metalFilter],
+      filters: {
+        model: [...state.filters.model],
+        size: [...state.filters.size],
+        face: [...state.filters.face],
+        elastomer: [...state.filters.elastomer],
+      },
+      pageSize: state.pageSize,
+    }
+    localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(serializable))
+  } catch { /* ignore */ }
+}
+
+function loadFilters() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_FILTERS)
+    if (!raw) return null
+    const p = JSON.parse(raw)
+    return {
+      search: p.search || '',
+      activeUnits: new Set(p.activeUnits || ['inch', 'metric']),
+      activeTypes: new Set(p.activeTypes || ['SA', 'SPK']),
+      metalFilter: new Set(p.metalFilter || []),
+      filters: {
+        model: new Set(p.filters?.model || []),
+        size: new Set(p.filters?.size || []),
+        face: new Set(p.filters?.face || []),
+        elastomer: new Set(p.filters?.elastomer || []),
+      },
+      pageSize: p.pageSize || 25,
+    }
+  } catch { return null }
+}
+
+// ── MultiSelect ──────────────────────────────────────────────────────────
 
 function MultiSelect({ label, options, selected, onChange, optionLabel }) {
   const [open, setOpen] = useState(false)
@@ -94,7 +139,6 @@ function MultiSelect({ label, options, selected, onChange, optionLabel }) {
             overflowY: 'auto',
           }}
         >
-          {/* All row */}
           <button
             onClick={() => onChange(new Set())}
             className="w-full text-left px-3 py-2 text-[12px] flex items-center gap-2.5 transition-colors"
@@ -155,6 +199,26 @@ function Checkbox({ checked }) {
   )
 }
 
+// ── Sort indicator ────────────────────────────────────────────────────────
+
+function SortIcon({ dir }) {
+  if (!dir) {
+    return (
+      <svg className="w-3 h-3 inline ml-1" style={{ opacity: 0.25 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      </svg>
+    )
+  }
+  return (
+    <svg className="w-3 h-3 inline ml-1" style={{ color: '#c8102e' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      {dir === 'asc'
+        ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+        : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      }
+    </svg>
+  )
+}
+
 // ── Export helpers ──────────────────────────────────────────────────────────
 
 const EXPORT_HEADERS = ['Item Number', 'Model', 'Description', 'Type', 'Size', 'Face', 'Elastomer', 'List Price', 'Lead Time (days)']
@@ -187,13 +251,11 @@ function makeSheet(rows) {
       cell.z = '"$"#,##0'
     }
   }
-  // Bold the rest of the header row too
   for (let c = range.s.c; c <= range.e.c; c++) {
     if (c === priceCol) continue
     const cell = ws[XLSX.utils.encode_cell({ r: 0, c })]
     if (cell) cell.s = { font: { bold: true } }
   }
-  // Column widths
   ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 42 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 16 }]
   return ws
 }
@@ -227,7 +289,6 @@ function makeTermsSheet() {
   ]
   const ws = XLSX.utils.aoa_to_sheet(lines)
   ws['!cols'] = [{ wch: 100 }]
-  // Bold the title and section headers
   const boldRows = [0, 1, 3, 7, 11, 15, 19, 23]
   for (const r of boldRows) {
     const cell = ws[XLSX.utils.encode_cell({ r, c: 0 })]
@@ -349,16 +410,135 @@ function ExportButton({ rows }) {
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ── Comparison Matrix ────────────────────────────────────────────────────
+
+function ComparisonMatrix({ rows, onAddToQuote }) {
+  // Build matrix: size → face/elastomer combo → price
+  const matrix = useMemo(() => {
+    const sizes = [...new Set(rows.map(r => r.size))].sort((a, b) => parseFloat(a) - parseFloat(b))
+    const combos = [...new Set(rows.map(r => `${r.face} / ${r.elastomer}`))].sort()
+    const lookup = {}
+    for (const r of rows) {
+      const key = `${r.size}|${r.face} / ${r.elastomer}`
+      lookup[key] = r
+    }
+    return { sizes, combos, lookup }
+  }, [rows])
+
+  if (matrix.sizes.length === 0) {
+    return (
+      <div className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
+        No items match the selected filters.
+      </div>
+    )
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
+            <th
+              className="text-left py-3 px-4 font-semibold uppercase sticky left-0 z-10"
+              style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em', background: 'rgba(248,248,250,1)', minWidth: '80px' }}
+            >
+              Size
+            </th>
+            {matrix.combos.map(combo => (
+              <th
+                key={combo}
+                className="text-center py-3 px-3 font-semibold uppercase"
+                style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.08em', minWidth: '120px' }}
+              >
+                {combo}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {matrix.sizes.map((size, si) => (
+            <tr
+              key={size}
+              style={{ borderTop: si === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
+            >
+              <td
+                className="py-2.5 px-4 text-[12px] font-semibold sticky left-0 z-10"
+                style={{ color: '#1c1c1e', background: 'rgba(248,248,250,1)' }}
+              >
+                {formatSize(size)}
+              </td>
+              {matrix.combos.map(combo => {
+                const row = matrix.lookup[`${size}|${combo}`]
+                if (!row) return <td key={combo} className="py-2.5 px-3 text-center text-[11px]" style={{ color: '#aeaeb2' }}>—</td>
+                return (
+                  <td key={combo} className="py-2.5 px-3 text-center">
+                    <button
+                      onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime })}
+                      className="inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all group"
+                      style={{ background: 'transparent' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(200,16,46,0.05)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      title={`${row.description} — Click to add to quote`}
+                    >
+                      <span className="text-[13px] font-semibold tabular-nums" style={{ color: '#1c1c1e' }}>
+                        {formatPrice(row.listPrice)}
+                      </span>
+                      <span className="text-[9px] font-mono" style={{ color: '#aeaeb2' }}>
+                        {row.itemNumber}
+                      </span>
+                    </button>
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────
+
+const SORT_KEYS = [
+  { key: 'itemNumber', label: 'Item Number', align: 'left',  width: 'w-[130px]' },
+  { key: 'model',      label: 'Model',       align: 'left',  width: 'w-[90px]' },
+  { key: 'description',label: 'Description', align: 'left',  width: '' },
+  { key: 'listPrice',  label: 'List Price',  align: 'right', width: 'w-[110px]' },
+  { key: 'leadTime',   label: 'Lead Time',   align: 'right', width: 'w-[110px]' },
+]
+
+function compareFn(key, dir) {
+  return (a, b) => {
+    let av = a[key], bv = b[key]
+    if (key === 'size') { av = parseFloat(av); bv = parseFloat(bv) }
+    if (typeof av === 'number' && typeof bv === 'number') return dir === 'asc' ? av - bv : bv - av
+    av = String(av ?? '').toLowerCase()
+    bv = String(bv ?? '').toLowerCase()
+    if (av < bv) return dir === 'asc' ? -1 : 1
+    if (av > bv) return dir === 'asc' ? 1 : -1
+    return 0
+  }
+}
 
 export default function MechanicalSeals({ onAddToQuote }) {
-  const [search, setSearch]           = useState('')
-  const [activeUnits, setActiveUnits] = useState(new Set(['inch', 'metric']))
-  const [activeTypes, setActiveTypes] = useState(new Set(['SA', 'SPK']))
-  const [filters, setFilters]         = useState(emptyFilters())
-  const [metalFilter, setMetalFilter] = useState(new Set())
+  const saved = useRef(loadFilters()).current
+
+  const [search, setSearch]           = useState(saved?.search ?? '')
+  const [activeUnits, setActiveUnits] = useState(saved?.activeUnits ?? new Set(['inch', 'metric']))
+  const [activeTypes, setActiveTypes] = useState(saved?.activeTypes ?? new Set(['SA', 'SPK']))
+  const [filters, setFilters]         = useState(saved?.filters ?? emptyFilters())
+  const [metalFilter, setMetalFilter] = useState(saved?.metalFilter ?? new Set())
   const [page, setPage]               = useState(1)
-  const [pageSize, setPageSize]       = useState(25)
+  const [pageSize, setPageSize]       = useState(saved?.pageSize ?? 25)
+  const [sortCol, setSortCol]         = useState(null)
+  const [sortDir, setSortDir]         = useState('asc')
+  const [viewMode, setViewMode]       = useState('table') // 'table' | 'matrix'
+
+  // Persist filters on change
+  useEffect(() => {
+    saveFilters({ search, activeUnits, activeTypes, metalFilter, filters, pageSize })
+  }, [search, activeUnits, activeTypes, metalFilter, filters, pageSize])
 
   const resetPage = () => setPage(1)
 
@@ -436,6 +616,11 @@ export default function MechanicalSeals({ onAddToQuote }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, search, activeUnits, activeTypes])
 
+  const sortedRows = useMemo(() => {
+    if (!sortCol) return visibleRows
+    return [...visibleRows].sort(compareFn(sortCol, sortDir))
+  }, [visibleRows, sortCol, sortDir])
+
   const typeCounts = useMemo(() => {
     const counts = { SA: 0, SPK: 0 }
     for (const row of visibleRows) if (row.type in counts) counts[row.type]++
@@ -451,12 +636,24 @@ export default function MechanicalSeals({ onAddToQuote }) {
     setActiveUnits(new Set(['inch', 'metric']))
     setActiveTypes(new Set(['SA', 'SPK']))
     setMetalFilter(new Set())
+    setSortCol(null)
     resetPage()
   }
 
-  const totalPages = Math.max(1, Math.ceil(visibleRows.length / pageSize))
+  const handleSort = (key) => {
+    if (sortCol === key) {
+      if (sortDir === 'asc') setSortDir('desc')
+      else { setSortCol(null); setSortDir('asc') }
+    } else {
+      setSortCol(key)
+      setSortDir('asc')
+    }
+    resetPage()
+  }
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize))
   const clampedPage = Math.min(page, totalPages)
-  const pagedRows = visibleRows.slice((clampedPage - 1) * pageSize, clampedPage * pageSize)
+  const pagedRows = sortedRows.slice((clampedPage - 1) * pageSize, clampedPage * pageSize)
 
   return (
     <div className="step-enter">
@@ -615,7 +812,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
       </div>
 
       {/* Results bar */}
-      <div className="flex items-center justify-between mb-2.5 px-1">
+      <div className="flex items-center justify-between mb-2.5 px-1 flex-wrap gap-2">
         <span className="text-[12px]" style={{ color: '#6e6e73' }}>
           <span className="font-semibold text-brand-black">{visibleRows.length.toLocaleString()}</span>
           {' '}{visibleRows.length === 1 ? 'result' : 'results'}
@@ -624,6 +821,43 @@ export default function MechanicalSeals({ onAddToQuote }) {
           )}
         </span>
         <div className="flex items-center gap-3">
+          {/* View mode toggle */}
+          <div
+            className="flex p-0.5 gap-0.5 rounded-[8px]"
+            style={{ background: 'rgba(0,0,0,0.06)' }}
+          >
+            <button
+              onClick={() => setViewMode('table')}
+              className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium transition-all focus:outline-none flex items-center gap-1"
+              style={{
+                background: viewMode === 'table' ? 'white' : 'transparent',
+                color: viewMode === 'table' ? '#1c1c1e' : '#6e6e73',
+                boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+              title="Table view"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              Table
+            </button>
+            <button
+              onClick={() => setViewMode('matrix')}
+              className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium transition-all focus:outline-none flex items-center gap-1"
+              style={{
+                background: viewMode === 'matrix' ? 'white' : 'transparent',
+                color: viewMode === 'matrix' ? '#1c1c1e' : '#6e6e73',
+                boxShadow: viewMode === 'matrix' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+              title="Comparison matrix"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18" />
+              </svg>
+              Compare
+            </button>
+          </div>
+
           <ExportButton rows={visibleRows} />
           <div className="flex items-center gap-1.5">
           <span className="text-[11px]" style={{ color: '#6e6e73' }}>Show</span>
@@ -645,7 +879,7 @@ export default function MechanicalSeals({ onAddToQuote }) {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Content area */}
       <div
         className="rounded-2xl overflow-hidden"
         style={{
@@ -654,109 +888,123 @@ export default function MechanicalSeals({ onAddToQuote }) {
           boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
         }}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
-                <th className="text-left py-3 px-5 font-semibold uppercase w-[130px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Item Number</th>
-                <th className="text-left py-3 px-4 font-semibold uppercase w-[90px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Model</th>
-                <th className="text-left py-3 px-4 font-semibold uppercase" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Description</th>
-                <th className="text-right py-3 px-5 font-semibold uppercase w-[110px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>List Price</th>
-                <th className="text-right py-3 px-4 font-semibold uppercase w-[110px]" style={{ fontSize: '10px', color: '#6e6e73', letterSpacing: '0.1em' }}>Lead Time</th>
-                <th className="w-[52px]" />
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
-                    No items match the selected filters.
-                  </td>
-                </tr>
-              ) : (
-                pagedRows.map((row, i) => (
-                  <tr
-                    key={`${row.itemNumber}-${i}`}
-                    className="transition-colors group"
-                    style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(242,242,247,0.7)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td className="py-3 px-5 font-mono text-[11px] font-medium whitespace-nowrap" style={{ color: '#1c1c1e' }}>{row.itemNumber}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <span
-                        className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
-                        style={{ background: 'rgba(200,16,46,0.07)', color: '#c8102e' }}
+        {viewMode === 'matrix' ? (
+          <ComparisonMatrix rows={visibleRows} onAddToQuote={onAddToQuote} />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
+                    {SORT_KEYS.map(({ key, label, align, width }) => (
+                      <th
+                        key={key}
+                        onClick={() => handleSort(key)}
+                        className={`text-${align} py-3 ${key === 'itemNumber' || key === 'listPrice' ? 'px-5' : 'px-4'} font-semibold uppercase ${width} cursor-pointer select-none transition-colors`}
+                        style={{ fontSize: '10px', color: sortCol === key ? '#c8102e' : '#6e6e73', letterSpacing: '0.1em' }}
+                        onMouseEnter={e => { if (sortCol !== key) e.currentTarget.style.color = '#1c1c1e' }}
+                        onMouseLeave={e => { if (sortCol !== key) e.currentTarget.style.color = '#6e6e73' }}
                       >
-                        {row.model}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-[13px]" style={{ color: '#1c1c1e' }}>
-                      {row.description}
-                      <span
-                        className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold"
-                        style={{ background: 'rgba(0,0,0,0.05)', color: '#6e6e73' }}
-                      >
-                        {TYPE_LABELS[row.type] ?? row.type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-5 text-right text-[13px] font-semibold tabular-nums whitespace-nowrap" style={{ color: '#1c1c1e' }}>
-                      {formatPrice(row.listPrice)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-[13px] tabular-nums whitespace-nowrap" style={{ color: '#6e6e73' }}>
-                      {row.leadTime != null ? `${row.leadTime}d` : '—'}
-                    </td>
-                    <td className="py-3 px-3">
-                      <button
-                        onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime })}
-                        className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
-                        style={{ background: '#c8102e', color: 'white' }}
-                        title="Add to quote"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                      </button>
-                    </td>
+                        {label}
+                        <SortIcon dir={sortCol === key ? sortDir : null} />
+                      </th>
+                    ))}
+                    <th className="w-[52px]" />
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination footer */}
-        {totalPages > 1 && (
-          <div
-            className="px-5 py-3 flex items-center justify-between"
-            style={{ borderTop: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}
-          >
-            <span className="text-[11px]" style={{ color: '#6e6e73' }}>
-              Page {clampedPage} of {totalPages} &mdash; {((clampedPage - 1) * pageSize + 1).toLocaleString()}–{Math.min(clampedPage * pageSize, visibleRows.length).toLocaleString()} of {visibleRows.length.toLocaleString()}
-            </span>
-            <div className="flex items-center gap-1">
-              {[
-                { label: '«', action: () => setPage(1), disabled: clampedPage === 1 },
-                { label: '‹', action: () => setPage(p => Math.max(1, p - 1)), disabled: clampedPage === 1 },
-                { label: '›', action: () => setPage(p => Math.min(totalPages, p + 1)), disabled: clampedPage === totalPages },
-                { label: '»', action: () => setPage(totalPages), disabled: clampedPage === totalPages },
-              ].map(({ label, action, disabled }) => (
-                <button
-                  key={label}
-                  onClick={action}
-                  disabled={disabled}
-                  className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[12px] font-medium transition-all focus:outline-none disabled:opacity-25"
-                  style={{
-                    background: 'rgba(0,0,0,0.05)',
-                    border: '1px solid rgba(0,0,0,0.08)',
-                    color: '#1c1c1e',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
+                </thead>
+                <tbody>
+                  {sortedRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
+                        No items match the selected filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedRows.map((row, i) => (
+                      <tr
+                        key={`${row.itemNumber}-${i}`}
+                        className="transition-colors group"
+                        style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(242,242,247,0.7)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <td className="py-3 px-5 font-mono text-[11px] font-medium whitespace-nowrap" style={{ color: '#1c1c1e' }}>{row.itemNumber}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span
+                            className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+                            style={{ background: 'rgba(200,16,46,0.07)', color: '#c8102e' }}
+                          >
+                            {row.model}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-[13px]" style={{ color: '#1c1c1e' }}>
+                          {row.description}
+                          <span
+                            className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold"
+                            style={{ background: 'rgba(0,0,0,0.05)', color: '#6e6e73' }}
+                          >
+                            {TYPE_LABELS[row.type] ?? row.type}
+                          </span>
+                        </td>
+                        <td className="py-3 px-5 text-right text-[13px] font-semibold tabular-nums whitespace-nowrap" style={{ color: '#1c1c1e' }}>
+                          {formatPrice(row.listPrice)}
+                        </td>
+                        <td className="py-3 px-4 text-right text-[13px] tabular-nums whitespace-nowrap" style={{ color: '#6e6e73' }}>
+                          {row.leadTime != null ? `${row.leadTime}d` : '—'}
+                        </td>
+                        <td className="py-3 px-3">
+                          <button
+                            onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime })}
+                            className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
+                            style={{ background: '#c8102e', color: 'white' }}
+                            title="Add to quote"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </div>
+
+            {/* Pagination footer */}
+            {totalPages > 1 && (
+              <div
+                className="px-5 py-3 flex items-center justify-between"
+                style={{ borderTop: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}
+              >
+                <span className="text-[11px]" style={{ color: '#6e6e73' }}>
+                  Page {clampedPage} of {totalPages} &mdash; {((clampedPage - 1) * pageSize + 1).toLocaleString()}–{Math.min(clampedPage * pageSize, sortedRows.length).toLocaleString()} of {sortedRows.length.toLocaleString()}
+                </span>
+                <div className="flex items-center gap-1">
+                  {[
+                    { label: '«', action: () => setPage(1), disabled: clampedPage === 1 },
+                    { label: '‹', action: () => setPage(p => Math.max(1, p - 1)), disabled: clampedPage === 1 },
+                    { label: '›', action: () => setPage(p => Math.min(totalPages, p + 1)), disabled: clampedPage === totalPages },
+                    { label: '»', action: () => setPage(totalPages), disabled: clampedPage === totalPages },
+                  ].map(({ label, action, disabled }) => (
+                    <button
+                      key={label}
+                      onClick={action}
+                      disabled={disabled}
+                      className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[12px] font-medium transition-all focus:outline-none disabled:opacity-25"
+                      style={{
+                        background: 'rgba(0,0,0,0.05)',
+                        border: '1px solid rgba(0,0,0,0.08)',
+                        color: '#1c1c1e',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -1,18 +1,53 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import Header from './Header.jsx'
 import Sidebar, { SECTIONS } from './Sidebar.jsx'
 import SummaryPanel from './SummaryPanel.jsx'
 import ComingSoon from './ComingSoon.jsx'
-import MechanicalSeals from './sections/MechanicalSeals.jsx'
+import { generateQuote } from '../utils/generateQuote.js'
+
+const MechanicalSeals = lazy(() => import('./sections/MechanicalSeals.jsx'))
 
 const SECTION_COMPONENTS = {
   'mechanical-seals': MechanicalSeals,
 }
 
+const STORAGE_KEY = 'chesterton_quote_items'
+
+function loadSavedItems() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch { /* ignore */ }
+  return []
+}
+
+function SectionLoader() {
+  return (
+    <div className="flex items-center justify-center py-24">
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: 'rgba(200,16,46,0.2)', borderTopColor: '#c8102e' }}
+        />
+        <p className="text-[12px] font-medium" style={{ color: '#6e6e73' }}>Loading...</p>
+      </div>
+    </div>
+  )
+}
+
 export default function Layout({ activeSection, onSectionChange, onLogout }) {
   const [renderKey, setRenderKey] = useState(0)
-  const [lineItems, setLineItems] = useState([])
+  const [lineItems, setLineItems] = useState(loadSavedItems)
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const prevSection = useRef(activeSection)
+
+  // Persist quote to localStorage
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lineItems)) } catch { /* ignore */ }
+  }, [lineItems])
 
   const handleAddToQuote = (item) => {
     setLineItems(prev => {
@@ -40,6 +75,11 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
 
   const currentSection = SECTIONS.find(s => s.id === activeSection)
   const total = lineItems.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0)
+
+  const handleMobileGenerate = () => {
+    if (lineItems.length === 0) return
+    generateQuote(lineItems)
+  }
 
   return (
     <div className="flex flex-col h-full" style={{ background: '#f2f2f7' }}>
@@ -77,12 +117,14 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
           </div>
 
           <div className="px-6 py-6 pb-12">
-            {(() => {
-              const SectionComponent = SECTION_COMPONENTS[activeSection]
-              return SectionComponent
-                ? <SectionComponent key={`${activeSection}-${renderKey}`} onAddToQuote={handleAddToQuote} />
-                : <ComingSoon key={`${activeSection}-${renderKey}`} title={currentSection?.label ?? ''} />
-            })()}
+            <Suspense fallback={<SectionLoader />}>
+              {(() => {
+                const SectionComponent = SECTION_COMPONENTS[activeSection]
+                return SectionComponent
+                  ? <SectionComponent key={`${activeSection}-${renderKey}`} onAddToQuote={handleAddToQuote} />
+                  : <ComingSoon key={`${activeSection}-${renderKey}`} title={currentSection?.label ?? ''} />
+              })()}
+            </Suspense>
           </div>
         </main>
 
@@ -99,15 +141,33 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
           borderTop: '1px solid rgba(0,0,0,0.08)',
         }}
       >
-        <div>
-          <p className="text-[11px] font-medium" style={{ color: '#6e6e73' }}>Quote Total</p>
-          <p className="text-[15px] font-bold text-brand-black tabular-nums">
-            {total > 0 ? `$${total.toFixed(2)}` : '—'}
-          </p>
-        </div>
         <button
+          onClick={() => setMobileDrawerOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <div>
+            <p className="text-[11px] font-medium text-left" style={{ color: '#6e6e73' }}>
+              Quote Total
+              {lineItems.length > 0 && (
+                <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#c8102e', color: 'white' }}>
+                  {lineItems.length}
+                </span>
+              )}
+            </p>
+            <p className="text-[15px] font-bold text-brand-black tabular-nums">
+              {total > 0 ? `$${total.toFixed(2)}` : '—'}
+            </p>
+          </div>
+          <svg className="w-4 h-4" style={{ color: '#6e6e73' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+        <button
+          onClick={handleMobileGenerate}
+          disabled={lineItems.length === 0}
           className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[13px] font-semibold rounded-xl
-                     transition-all active:scale-[0.99] focus-visible:outline-none"
+                     transition-all active:scale-[0.99] focus-visible:outline-none
+                     disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ background: '#c8102e', color: 'white' }}
         >
           Generate Quote
@@ -116,6 +176,17 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
           </svg>
         </button>
       </div>
+
+      {/* Mobile quote drawer */}
+      {mobileDrawerOpen && (
+        <SummaryPanel
+          mobile
+          activeSection={activeSection}
+          lineItems={lineItems}
+          onUpdateQty={handleUpdateQty}
+          onClose={() => setMobileDrawerOpen(false)}
+        />
+      )}
     </div>
   )
 }
