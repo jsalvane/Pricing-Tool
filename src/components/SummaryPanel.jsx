@@ -1,14 +1,13 @@
 import { useState } from 'react'
-import { generateQuote } from '../utils/generateQuote'
 import { exportQuoteXlsx } from '../utils/exportQuoteXlsx'
 
-export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQty, mobile = false, onClose }) {
+export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQty, onUpdateNote, mobile = false, onClose, onGenerateQuote }) {
   const [open, setOpen] = useState(true)
   const total = lineItems.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0)
 
   const handleGenerateQuote = () => {
     if (lineItems.length === 0) return
-    generateQuote(lineItems)
+    onGenerateQuote?.()
   }
 
   const handleExportQuote = () => {
@@ -61,7 +60,7 @@ export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQt
 
           {/* Items */}
           <div className="flex-1 overflow-y-auto px-3 py-3" style={{ background: 'white' }}>
-            {renderItems(lineItems, onUpdateQty)}
+            {renderItems(lineItems, onUpdateQty, onUpdateNote)}
           </div>
 
           {/* Totals */}
@@ -179,7 +178,7 @@ export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQt
 
         {/* Line items */}
         <div className="flex-1 overflow-y-auto px-3 py-3" style={{ background: 'white' }}>
-          {renderItems(lineItems, onUpdateQty)}
+          {renderItems(lineItems, onUpdateQty, onUpdateNote)}
         </div>
 
         {/* Totals */}
@@ -221,7 +220,7 @@ export default function SummaryPanel({ activeSection, lineItems = [], onUpdateQt
 
 // ── Shared sub-components ─────────────────────────────────────────────────
 
-function renderItems(lineItems, onUpdateQty) {
+function renderItems(lineItems, onUpdateQty, onUpdateNote) {
   if (lineItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
@@ -298,6 +297,18 @@ function renderItems(lineItems, onUpdateQty) {
               </svg>
             </button>
           </div>
+          <input
+            type="text"
+            value={item.note || ''}
+            onChange={e => onUpdateNote?.(i, e.target.value)}
+            placeholder="Add note…"
+            className="w-full mt-1.5 text-[10px] px-2 py-1 rounded-[7px] focus:outline-none"
+            style={{
+              background: 'rgba(0,0,0,0.03)',
+              border: '1px solid rgba(0,0,0,0.07)',
+              color: '#6e6e73',
+            }}
+          />
         </div>
       ))}
     </div>

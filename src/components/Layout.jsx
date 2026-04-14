@@ -3,7 +3,7 @@ import Header from './Header.jsx'
 import Sidebar, { SECTIONS } from './Sidebar.jsx'
 import SummaryPanel from './SummaryPanel.jsx'
 import ComingSoon from './ComingSoon.jsx'
-import { generateQuote } from '../utils/generateQuote.js'
+import QuoteFormModal from './QuoteFormModal.jsx'
 
 const MechanicalSeals = lazy(() => import('./sections/MechanicalSeals.jsx'))
 
@@ -32,7 +32,6 @@ function FlyDot({ startX, startY, endX, endY }) {
   const [active, setActive] = useState(false)
 
   useEffect(() => {
-    // Two rAF frames to ensure initial render is painted before transition starts
     let id = requestAnimationFrame(() => {
       id = requestAnimationFrame(() => setActive(true))
     })
@@ -75,10 +74,11 @@ function SectionLoader() {
   )
 }
 
-export default function Layout({ activeSection, onSectionChange, onLogout }) {
+export default function Layout({ activeSection, onSectionChange, onLogout, dark, onToggleDark }) {
   const [renderKey, setRenderKey] = useState(0)
   const [lineItems, setLineItems] = useState(loadSavedItems)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false)
   const [flyDots, setFlyDots] = useState([])
   const prevSection = useRef(activeSection)
 
@@ -93,7 +93,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
       if (existing !== -1) {
         return prev.map((i, idx) => idx === existing ? { ...i, qty: i.qty + 1 } : i)
       }
-      return [...prev, { ...item, qty: 1 }]
+      return [...prev, { ...item, qty: 1, note: '' }]
     })
 
     // Fly-to-quote animation
@@ -121,6 +121,10 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
     })
   }
 
+  const handleUpdateNote = (idx, note) => {
+    setLineItems(prev => prev.map((item, i) => i === idx ? { ...item, note } : item))
+  }
+
   useEffect(() => {
     if (prevSection.current !== activeSection) {
       setRenderKey(k => k + 1)
@@ -131,16 +135,20 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
   const currentSection = SECTIONS.find(s => s.id === activeSection)
   const total = lineItems.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0)
 
-  const handleMobileGenerate = () => {
-    if (lineItems.length === 0) return
-    generateQuote(lineItems)
-  }
-
   return (
-    <div className="flex flex-col h-full" style={{ background: '#f2f2f7' }}>
+    <div className="flex flex-col h-full" style={{ background: dark ? 'var(--dm-bg, #0a0a0c)' : '#f2f2f7' }}>
       {/* Fly-to-quote particles */}
       {flyDots.map(dot => <FlyDot key={dot.id} {...dot} />)}
-      <Header activeSection={activeSection} onLogout={onLogout} />
+
+      {/* Quote customer form modal */}
+      {quoteModalOpen && (
+        <QuoteFormModal
+          lineItems={lineItems}
+          onClose={() => setQuoteModalOpen(false)}
+        />
+      )}
+
+      <Header activeSection={activeSection} onLogout={onLogout} dark={dark} onToggleDark={onToggleDark} />
 
       <div className="flex flex-1 min-h-0 max-w-[1280px] mx-auto w-full">
         <Sidebar activeSection={activeSection} onSectionChange={onSectionChange} />
@@ -185,7 +193,13 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
           </div>
         </main>
 
-        <SummaryPanel activeSection={activeSection} lineItems={lineItems} onUpdateQty={handleUpdateQty} />
+        <SummaryPanel
+          activeSection={activeSection}
+          lineItems={lineItems}
+          onUpdateQty={handleUpdateQty}
+          onUpdateNote={handleUpdateNote}
+          onGenerateQuote={() => setQuoteModalOpen(true)}
+        />
       </div>
 
       {/* Mobile bottom bar */}
@@ -220,7 +234,7 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
           </svg>
         </button>
         <button
-          onClick={handleMobileGenerate}
+          onClick={() => { if (lineItems.length > 0) setQuoteModalOpen(true) }}
           disabled={lineItems.length === 0}
           className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[13px] font-semibold rounded-xl
                      transition-all active:scale-[0.99] focus-visible:outline-none
@@ -241,6 +255,8 @@ export default function Layout({ activeSection, onSectionChange, onLogout }) {
           activeSection={activeSection}
           lineItems={lineItems}
           onUpdateQty={handleUpdateQty}
+          onUpdateNote={handleUpdateNote}
+          onGenerateQuote={() => { setMobileDrawerOpen(false); setQuoteModalOpen(true) }}
           onClose={() => setMobileDrawerOpen(false)}
         />
       )}

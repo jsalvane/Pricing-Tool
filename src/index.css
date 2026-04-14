@@ -107,6 +107,111 @@ body {
   margin: 0;
 }
 
+/* ─── Dark mode ─── */
+
+html.dark body {
+  background-color: #0a0a0c;
+  color: #f2f2f7;
+}
+
+html.dark {
+  --dm-bg: #0a0a0c;
+  --dm-surface: #1c1c1e;
+  --dm-surface2: #2c2c2e;
+  --dm-border: rgba(255,255,255,0.08);
+  --dm-text: #f2f2f7;
+  --dm-muted: rgba(255,255,255,0.45);
+  --dm-input-bg: rgba(255,255,255,0.06);
+  --dm-hover: rgba(255,255,255,0.05);
+  --dm-row-hover: rgba(255,255,255,0.04);
+}
+
+/* Header */
+html.dark header {
+  background: rgba(18,18,20,0.9) !important;
+  border-bottom-color: rgba(255,255,255,0.07) !important;
+}
+html.dark header span, html.dark header p { color: rgba(255,255,255,0.75) !important; }
+html.dark header .text-brand-black { color: #f2f2f7 !important; }
+
+/* Sidebar */
+html.dark nav, html.dark aside.sidebar {
+  background: #111113 !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Cards / filter panel / results table */
+html.dark .rounded-2xl[style*="background: white"],
+html.dark .rounded-2xl[style*="background:white"] {
+  background: #1c1c1e !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+html.dark table { background: transparent !important; }
+html.dark thead tr { background: rgba(255,255,255,0.03) !important; border-color: rgba(255,255,255,0.07) !important; }
+html.dark tbody tr:hover { background: rgba(255,255,255,0.04) !important; }
+html.dark td, html.dark th { border-color: rgba(255,255,255,0.05) !important; }
+html.dark td[style*="color: #1c1c1e"],
+html.dark td[style*="color:#1c1c1e"] { color: #f2f2f7 !important; }
+html.dark td[style*="color: #6e6e73"],
+html.dark td[style*="color:#6e6e73"] { color: rgba(255,255,255,0.45) !important; }
+
+/* Summary panel */
+html.dark aside { background: #111113 !important; border-color: rgba(255,255,255,0.07) !important; }
+html.dark aside div[style*="background: white"],
+html.dark aside div[style*="background:white"] { background: #111113 !important; }
+html.dark aside div[style*="background: #f9f9fb"] { background: #161618 !important; }
+
+/* Inputs */
+html.dark input[type="text"], html.dark textarea {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #f2f2f7 !important;
+}
+html.dark input::placeholder, html.dark textarea::placeholder {
+  color: rgba(255,255,255,0.3) !important;
+}
+
+/* Buttons with light backgrounds */
+html.dark button[style*="background: #f2f2f7"],
+html.dark button[style*="background:#f2f2f7"] {
+  background: rgba(255,255,255,0.08) !important;
+  color: #f2f2f7 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+html.dark button[style*="background: rgba(0,0,0,0.04)"],
+html.dark button[style*="background: rgba(0,0,0,0.05)"],
+html.dark button[style*="background: rgba(0,0,0,0.06)"] {
+  background: rgba(255,255,255,0.07) !important;
+}
+
+/* Mobile bars — target by background value */
+html.dark [style*="background: rgba(242,242,247,0.9)"],
+html.dark [style*="background: rgba(242,242,247,0.92)"] {
+  background: rgba(18,18,20,0.95) !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+/* General text colors */
+html.dark [style*="color: #1c1c1e"] { color: #f2f2f7 !important; }
+html.dark [style*="color:#1c1c1e"] { color: #f2f2f7 !important; }
+html.dark [style*="color: #6e6e73"] { color: rgba(255,255,255,0.45) !important; }
+html.dark [style*="color:#6e6e73"] { color: rgba(255,255,255,0.45) !important; }
+html.dark [style*="color: #aeaeb2"] { color: rgba(255,255,255,0.28) !important; }
+html.dark [style*="color:#aeaeb2"] { color: rgba(255,255,255,0.28) !important; }
+
+/* QuoteFormModal */
+html.dark .card-enter[style*="background: white"],
+html.dark .card-enter[style*="background:white"] { background: #1c1c1e !important; }
+
+/* Segmented controls */
+html.dark div[style*="background: rgba(0,0,0,0.06)"] { background: rgba(255,255,255,0.07) !important; }
+
+/* Dropdowns */
+html.dark div[style*="background: white"][style*="box-shadow"] { background: #2c2c2e !important; border-color: rgba(255,255,255,0.1) !important; }
+
+/* img mix-blend */
+html.dark img[style*="mix-blend-multiply"] { mix-blend-mode: normal !important; filter: invert(1) brightness(1.8); }
+
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }

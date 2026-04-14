@@ -10,7 +10,10 @@ export function generateQuote(lineItems, { customerName = '', notes = '' } = {})
   const rows = lineItems.map(item => `
     <tr>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e5ea;font-family:monospace;font-size:12px;">${item.code || '—'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e5ea;font-size:13px;">${item.name}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e5ea;font-size:13px;">
+        ${item.name}
+        ${item.note ? `<div style="font-size:11px;color:#6e6e73;margin-top:3px;font-style:italic;">${item.note}</div>` : ''}
+      </td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e5ea;text-align:center;font-size:13px;">${item.qty}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e5ea;text-align:right;font-size:13px;">$${(item.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e5ea;text-align:right;font-size:13px;font-weight:600;">$${((item.price || 0) * (item.qty || 1)).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>

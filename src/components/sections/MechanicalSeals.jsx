@@ -558,13 +558,14 @@ export default function MechanicalSeals({ onAddToQuote }) {
   const [sortCol, setSortCol]         = useState(null)
   const [sortDir, setSortDir]         = useState('asc')
   const [viewMode, setViewMode]       = useState('table') // 'table' | 'matrix'
+  const [selectedRows, setSelectedRows] = useState(new Set())
 
   // Persist filters on change
   useEffect(() => {
     saveFilters({ search, activeUnits, activeTypes, metalFilter, filters, pageSize })
   }, [search, activeUnits, activeTypes, metalFilter, filters, pageSize])
 
-  const resetPage = () => setPage(1)
+  const resetPage = () => { setPage(1); setSelectedRows(new Set()) }
 
   const toggleUnit = unit => {
     setActiveUnits(prev => {
@@ -678,6 +679,56 @@ export default function MechanicalSeals({ onAddToQuote }) {
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize))
   const clampedPage = Math.min(page, totalPages)
   const pagedRows = sortedRows.slice((clampedPage - 1) * pageSize, clampedPage * pageSize)
+
+  // ── SA ↔ SPK cross-reference ──────────────────────────────────────────────
+
+  const counterpartMap = useMemo(() => {
+    const map = new Map()
+    for (const row of SEAL_DATA) {
+      map.set(`${row.model}|${row.size}|${row.face}|${row.elastomer}|${row.type}`, row)
+    }
+    return map
+  }, [])
+
+  const findCounterpart = (row) =>
+    counterpartMap.get(`${row.model}|${row.size}|${row.face}|${row.elastomer}|${row.type === 'SA' ? 'SPK' : 'SA'}`)
+
+  // ── Bulk selection ─────────────────────────────────────────────────────────
+
+  const rowKey = (row) => `${row.itemNumber}|${row.description}`
+  const allPageSelected = pagedRows.length > 0 && pagedRows.every(r => selectedRows.has(rowKey(r)))
+
+  const toggleSelect = (key) => {
+    setSelectedRows(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    setSelectedRows(prev => {
+      const next = new Set(prev)
+      if (allPageSelected) {
+        pagedRows.forEach(r => next.delete(rowKey(r)))
+      } else {
+        pagedRows.forEach(r => next.add(rowKey(r)))
+      }
+      return next
+    })
+  }
+
+  const addSelectedToQuote = (e) => {
+    const rect = e?.currentTarget?.getBoundingClientRect()
+    let first = true
+    for (const row of sortedRows) {
+      if (selectedRows.has(rowKey(row))) {
+        onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime }, first ? rect : null)
+        first = false
+      }
+    }
+    setSelectedRows(new Set())
+  }
 
   return (
     <div className="step-enter">
@@ -837,13 +888,27 @@ export default function MechanicalSeals({ onAddToQuote }) {
 
       {/* Results bar */}
       <div className="flex items-center justify-between mb-2.5 px-1 flex-wrap gap-2">
-        <span className="text-[12px]" style={{ color: '#6e6e73' }}>
-          <span className="font-semibold text-brand-black">{visibleRows.length.toLocaleString()}</span>
-          {' '}{visibleRows.length === 1 ? 'result' : 'results'}
-          {isFiltered && (
-            <span style={{ color: 'rgba(0,0,0,0.3)' }}> of {SEAL_DATA.length.toLocaleString()}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[12px]" style={{ color: '#6e6e73' }}>
+            <span className="font-semibold text-brand-black">{visibleRows.length.toLocaleString()}</span>
+            {' '}{visibleRows.length === 1 ? 'result' : 'results'}
+            {isFiltered && (
+              <span style={{ color: 'rgba(0,0,0,0.3)' }}> of {SEAL_DATA.length.toLocaleString()}</span>
+            )}
+          </span>
+          {selectedRows.size > 0 && viewMode === 'table' && (
+            <button
+              onClick={addSelectedToQuote}
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-[8px] transition-all focus:outline-none"
+              style={{ background: '#c8102e', color: 'white', boxShadow: '0 1px 4px rgba(200,16,46,0.3)' }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add {selectedRows.size} to Quote
+            </button>
           )}
-        </span>
+        </div>
         <div className="flex items-center gap-3">
           {/* View mode toggle */}
           <div
@@ -920,6 +985,23 @@ export default function MechanicalSeals({ onAddToQuote }) {
               <table className="w-full">
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
+                    <th className="w-[44px] py-3 px-3 text-center">
+                      <button
+                        onClick={toggleSelectAll}
+                        className="w-4 h-4 rounded flex items-center justify-center mx-auto"
+                        style={{
+                          border: allPageSelected ? 'none' : '1.5px solid rgba(0,0,0,0.22)',
+                          background: allPageSelected ? '#c8102e' : 'transparent',
+                        }}
+                        title={allPageSelected ? 'Deselect all on page' : 'Select all on page'}
+                      >
+                        {allPageSelected && (
+                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    </th>
                     {SORT_KEYS.map(({ key, label, align, width }) => (
                       <th
                         key={key}
@@ -933,63 +1015,99 @@ export default function MechanicalSeals({ onAddToQuote }) {
                         <SortIcon dir={sortCol === key ? sortDir : null} />
                       </th>
                     ))}
-                    <th className="w-[52px]" />
+                    <th className="w-[80px]" />
                   </tr>
                 </thead>
                 <tbody>
                   {sortedRows.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
+                      <td colSpan={7} className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
                         No items match the selected filters.
                       </td>
                     </tr>
                   ) : (
-                    pagedRows.map((row, i) => (
-                      <tr
-                        key={`${row.itemNumber}-${i}`}
-                        className="transition-colors group"
-                        style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(242,242,247,0.7)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                      >
-                        <td className="py-3 px-5 font-mono text-[11px] font-medium whitespace-nowrap" style={{ color: '#1c1c1e' }}>{row.itemNumber}</td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
-                            style={{ background: 'rgba(200,16,46,0.07)', color: '#c8102e' }}
-                          >
-                            {row.model}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-[13px]" style={{ color: '#1c1c1e' }}>
-                          {row.description}
-                          <span
-                            className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold"
-                            style={{ background: 'rgba(0,0,0,0.05)', color: '#6e6e73' }}
-                          >
-                            {TYPE_LABELS[row.type] ?? row.type}
-                          </span>
-                        </td>
-                        <td className="py-3 px-5 text-right text-[13px] font-semibold tabular-nums whitespace-nowrap" style={{ color: '#1c1c1e' }}>
-                          {formatPrice(row.listPrice)}
-                        </td>
-                        <td className="py-3 px-4 text-right text-[13px] tabular-nums whitespace-nowrap" style={{ color: '#6e6e73' }}>
-                          {row.leadTime != null ? `${row.leadTime}d` : '—'}
-                        </td>
-                        <td className="py-3 px-3">
-                          <button
-                            onClick={(e) => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime }, e.currentTarget.getBoundingClientRect())}
-                            className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
-                            style={{ background: '#c8102e', color: 'white' }}
-                            title="Add to quote"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    pagedRows.map((row, i) => {
+                      const key = rowKey(row)
+                      const checked = selectedRows.has(key)
+                      const counterpart = findCounterpart(row)
+                      return (
+                        <tr
+                          key={`${row.itemNumber}-${i}`}
+                          className="transition-colors group"
+                          style={{
+                            borderTop: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)',
+                            background: checked ? 'rgba(200,16,46,0.03)' : 'transparent',
+                          }}
+                          onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'rgba(242,242,247,0.7)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = checked ? 'rgba(200,16,46,0.03)' : 'transparent' }}
+                        >
+                          <td className="py-3 px-3 text-center">
+                            <button
+                              onClick={() => toggleSelect(key)}
+                              className="w-4 h-4 rounded flex items-center justify-center mx-auto"
+                              style={{
+                                border: checked ? 'none' : '1.5px solid rgba(0,0,0,0.22)',
+                                background: checked ? '#c8102e' : 'transparent',
+                              }}
+                            >
+                              {checked && (
+                                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                          </td>
+                          <td className="py-3 px-5 font-mono text-[11px] font-medium whitespace-nowrap" style={{ color: '#1c1c1e' }}>{row.itemNumber}</td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span
+                              className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+                              style={{ background: 'rgba(200,16,46,0.07)', color: '#c8102e' }}
+                            >
+                              {row.model}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-[13px]" style={{ color: '#1c1c1e' }}>
+                            {row.description}
+                            <span
+                              className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold"
+                              style={{ background: 'rgba(0,0,0,0.05)', color: '#6e6e73' }}
+                            >
+                              {TYPE_LABELS[row.type] ?? row.type}
+                            </span>
+                          </td>
+                          <td className="py-3 px-5 text-right text-[13px] font-semibold tabular-nums whitespace-nowrap" style={{ color: '#1c1c1e' }}>
+                            {formatPrice(row.listPrice)}
+                          </td>
+                          <td className="py-3 px-4 text-right text-[13px] tabular-nums whitespace-nowrap" style={{ color: '#6e6e73' }}>
+                            {row.leadTime != null ? `${row.leadTime}d` : '—'}
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5 justify-end">
+                              {counterpart && (
+                                <button
+                                  onClick={(e) => onAddToQuote?.({ name: counterpart.description, code: counterpart.itemNumber, price: counterpart.listPrice, leadTime: counterpart.leadTime }, e.currentTarget.getBoundingClientRect())}
+                                  className="h-7 px-2 flex items-center gap-1 rounded-lg text-[9px] font-semibold transition-all active:scale-90 focus:outline-none opacity-0 group-hover:opacity-100"
+                                  style={{ background: 'rgba(200,16,46,0.08)', color: '#c8102e', border: '1px solid rgba(200,16,46,0.2)' }}
+                                  title={`Add ${row.type === 'SA' ? 'SPK' : 'SA'} counterpart: ${counterpart.itemNumber}`}
+                                >
+                                  +{row.type === 'SA' ? 'SPK' : 'SA'}
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime }, e.currentTarget.getBoundingClientRect())}
+                                className="w-7 h-7 flex items-center justify-center rounded-full transition-all active:scale-90 focus:outline-none"
+                                style={{ background: '#c8102e', color: 'white' }}
+                                title="Add to quote"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>
