@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { SEAL_DATA } from '../../data/sealData'
 
@@ -413,19 +413,23 @@ function ExportButton({ rows }) {
 // ── Comparison Matrix ────────────────────────────────────────────────────
 
 function ComparisonMatrix({ rows, onAddToQuote }) {
-  // Build matrix: size → face/elastomer combo → price
   const matrix = useMemo(() => {
-    const sizes = [...new Set(rows.map(r => r.size))].sort((a, b) => parseFloat(a) - parseFloat(b))
+    const models = [...new Set(rows.map(r => r.model))].sort()
     const combos = [...new Set(rows.map(r => `${r.face} / ${r.elastomer}`))].sort()
-    const lookup = {}
-    for (const r of rows) {
-      const key = `${r.size}|${r.face} / ${r.elastomer}`
-      lookup[key] = r
+    const byModel = {}
+    for (const model of models) {
+      const modelRows = rows.filter(r => r.model === model)
+      const sizes = [...new Set(modelRows.map(r => r.size))].sort((a, b) => parseFloat(a) - parseFloat(b))
+      const lookup = {}
+      for (const r of modelRows) {
+        lookup[`${r.size}|${r.face} / ${r.elastomer}`] = r
+      }
+      byModel[model] = { sizes, lookup }
     }
-    return { sizes, combos, lookup }
+    return { models, combos, byModel }
   }, [rows])
 
-  if (matrix.sizes.length === 0) {
+  if (matrix.models.length === 0) {
     return (
       <div className="py-16 text-center text-[13px]" style={{ color: '#6e6e73' }}>
         No items match the selected filters.
@@ -456,41 +460,61 @@ function ComparisonMatrix({ rows, onAddToQuote }) {
           </tr>
         </thead>
         <tbody>
-          {matrix.sizes.map((size, si) => (
-            <tr
-              key={size}
-              style={{ borderTop: si === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
-            >
-              <td
-                className="py-2.5 px-4 text-[12px] font-semibold sticky left-0 z-10"
-                style={{ color: '#1c1c1e', background: 'rgba(248,248,250,1)' }}
-              >
-                {formatSize(size)}
-              </td>
-              {matrix.combos.map(combo => {
-                const row = matrix.lookup[`${size}|${combo}`]
-                if (!row) return <td key={combo} className="py-2.5 px-3 text-center text-[11px]" style={{ color: '#aeaeb2' }}>—</td>
-                return (
-                  <td key={combo} className="py-2.5 px-3 text-center">
-                    <button
-                      onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime })}
-                      className="inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all group"
-                      style={{ background: 'transparent' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(200,16,46,0.05)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                      title={`${row.description} — Click to add to quote`}
-                    >
-                      <span className="text-[13px] font-semibold tabular-nums" style={{ color: '#1c1c1e' }}>
-                        {formatPrice(row.listPrice)}
-                      </span>
-                      <span className="text-[9px] font-mono" style={{ color: '#aeaeb2' }}>
-                        {row.itemNumber}
-                      </span>
-                    </button>
+          {matrix.models.map(model => (
+            <React.Fragment key={model}>
+              {/* Model header row */}
+              <tr>
+                <td
+                  colSpan={matrix.combos.length + 1}
+                  className="py-2.5 px-4 sticky left-0 z-10"
+                  style={{ background: 'rgba(200,16,46,0.05)', borderTop: '2px solid rgba(200,16,46,0.15)' }}
+                >
+                  <span
+                    className="text-[11px] font-bold uppercase tracking-wide"
+                    style={{ color: '#c8102e' }}
+                  >
+                    {model}
+                  </span>
+                </td>
+              </tr>
+              {/* Size rows for this model */}
+              {matrix.byModel[model].sizes.map((size, si) => (
+                <tr
+                  key={`${model}-${size}`}
+                  style={{ borderTop: si === 0 ? 'none' : '1px solid rgba(0,0,0,0.04)' }}
+                >
+                  <td
+                    className="py-2.5 px-4 text-[12px] font-semibold sticky left-0 z-10"
+                    style={{ color: '#1c1c1e', background: 'rgba(248,248,250,1)' }}
+                  >
+                    {formatSize(size)}
                   </td>
-                )
-              })}
-            </tr>
+                  {matrix.combos.map(combo => {
+                    const row = matrix.byModel[model].lookup[`${size}|${combo}`]
+                    if (!row) return <td key={combo} className="py-2.5 px-3 text-center text-[11px]" style={{ color: '#aeaeb2' }}>—</td>
+                    return (
+                      <td key={combo} className="py-2.5 px-3 text-center">
+                        <button
+                          onClick={() => onAddToQuote?.({ name: row.description, code: row.itemNumber, price: row.listPrice, leadTime: row.leadTime })}
+                          className="inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all group"
+                          style={{ background: 'transparent' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(200,16,46,0.05)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          title={`${row.description} — Click to add to quote`}
+                        >
+                          <span className="text-[13px] font-semibold tabular-nums" style={{ color: '#1c1c1e' }}>
+                            {formatPrice(row.listPrice)}
+                          </span>
+                          <span className="text-[9px] font-mono" style={{ color: '#aeaeb2' }}>
+                            {row.itemNumber}
+                          </span>
+                        </button>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </React.Fragment>
           ))}
         </tbody>
       </table>
