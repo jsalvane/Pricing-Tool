@@ -98,8 +98,8 @@ export function generateQuote(lineItems, { customerName = '', notes = '' } = {})
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:24px;border-bottom:3px solid #c8102e;">
     <div>
       <img src="/logo.png" alt="A.W. Chesterton Company" style="height:40px;margin-bottom:10px;" onerror="this.style.display='none'"/>
-      <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:#1c1c1e;">Engineered Sealing Solutions</h1>
-      <p style="font-size:12px;color:#8e8e93;margin-top:4px;letter-spacing:0.02em;">Precision-Engineered Mechanical Seal Quotation</p>
+      <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:#1c1c1e;">A.W. Chesterton Company</h1>
+      <p style="font-size:12px;color:#8e8e93;margin-top:4px;letter-spacing:0.02em;">Mechanical Seals — Price Quote</p>
     </div>
     <div style="text-align:right;">
       <p style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#8e8e93;">Quote Number</p>
@@ -117,7 +117,6 @@ export function generateQuote(lineItems, { customerName = '', notes = '' } = {})
 
   <!-- Line items -->
   <div style="margin-bottom:28px;">
-    <p style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:#8e8e93;margin-bottom:12px;">Engineered Products</p>
     <table style="width:100%;border-collapse:collapse;border:1px solid #e8e8ed;border-radius:8px;">
       <thead>
         <tr style="background:#1c1c1e;">
