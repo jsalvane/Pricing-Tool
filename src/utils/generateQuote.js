@@ -58,6 +58,7 @@ export function generateQuote(lineItems, { customerName = '', notes = '' } = {})
       <td style="padding:14px 16px;border-bottom:1px solid #e8e8ed;font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:#48484a;vertical-align:top;">${item.code || '—'}</td>
       <td style="padding:14px 16px;border-bottom:1px solid #e8e8ed;font-size:13px;vertical-align:top;">
         <div style="font-weight:600;color:#1c1c1e;margin-bottom:4px;">${parsed ? `Chesterton ${parsed.model} Mechanical Seal` : item.name}${typeLabel ? ` <span style="display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:2px 6px;border-radius:4px;vertical-align:middle;margin-left:6px;${item.type === 'SA' ? 'background:#c8102e;color:white;' : 'background:#e8e8ed;color:#48484a;'}">${typeLabel}</span>` : ''}</div>
+        <div style="font-size:11px;color:#8e8e93;font-family:'SF Mono','Fira Code',monospace;margin-bottom:4px;">${item.name}</div>
         ${parsed ? `<div style="font-size:11px;color:#6e6e73;line-height:1.7;">
           <span style="display:inline-block;margin-right:14px;"><strong style="color:#48484a;">Size:</strong> ${parsed.size}"</span>
           ${faceLabel ? `<span style="display:inline-block;margin-right:14px;"><strong style="color:#48484a;">Faces:</strong> ${faceLabel}</span>` : ''}
